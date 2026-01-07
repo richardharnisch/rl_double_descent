@@ -62,6 +62,7 @@ Model size
 - `--depths` (default: `2`): Comma/range list of depths to sweep (e.g., `2,3,4` or `2-5`). Every width is tested against every depth.
 - `--runs` (default: `1`): Number of independent runs per width (different RNG seeds and replay buffer sampling).
 - `--base-seed` (default: `0`): Base RNG seed for runs; run `k` uses `base_seed + k` for all RNGs.
+- `--run-id` (default: unset): Force a single run index (use with `--runs 1`) so array jobs can map distinct seeds to distinct runs.
 - `--algo` (default: `dqn`): Algorithm choice (`dqn` or `trpo`). DQN-specific flags are ignored when using TRPO.
 
 Environment
@@ -100,6 +101,7 @@ Evaluation
 Logging and plots
 - `--log-x` / `--no-log-x` (default: log-x enabled): Use or disable log scale on the x-axis for plots.
 - `--log-dir` (default: `results/<timestamp>`): Base directory for all logs. Each run writes to its own subdirectory.
+- `--collect-only` (default: disabled): Skip training and compile `metrics.csv`, `summary.csv`, and `curve.png` from existing run directories.
 
 Videos
 - `--video-seeds` (default: empty): Comma/range seed list to render as GIFs (e.g., `1,2,10-12`). Empty string disables video logging.

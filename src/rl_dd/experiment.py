@@ -199,6 +199,23 @@ def plot_results(summary: List[Dict[str, float]], path: Path, log_x: bool) -> No
     plt.close()
 
 
+def collect_results(log_root: Path, log_x: bool) -> None:
+    metrics_files = sorted(log_root.glob("w*_d*_run*/metrics.csv"))
+    results: List[Dict[str, float]] = []
+    for metrics_path in metrics_files:
+        with metrics_path.open("r", newline="") as handle:
+            reader = csv.DictReader(handle)
+            for row in reader:
+                parsed = {key: float(value) for key, value in row.items()}
+                results.append(parsed)
+    if not results:
+        return
+    save_csv(log_root / "metrics.csv", results)
+    summary = aggregate_results(results)
+    save_csv(log_root / "summary.csv", summary)
+    plot_results(summary, log_root / "curve.png", log_x=log_x)
+
+
 def save_episode_metrics(
     returns: List[float],
     lengths: List[int],
@@ -377,6 +394,8 @@ def run_experiment(
     test_seeds = parse_int_list(args.test_seeds)
     widths = parse_widths(args.widths)
     depths = parse_depths(args.depths)
+    if args.run_id is not None and args.runs != 1:
+        raise ValueError("Use --runs 1 when --run-id is set.")
     log_root = Path(args.log_dir)
     log_root.mkdir(parents=True, exist_ok=True)
 
@@ -402,14 +421,15 @@ def run_experiment(
 
     results: List[Dict[str, float]] = []
 
-    total_runs = len(widths) * len(depths) * args.runs
+    run_ids = [args.run_id] if args.run_id is not None else list(range(args.runs))
+    total_runs = len(widths) * len(depths) * len(run_ids)
     progress = tqdm(total=total_runs, desc="runs")
 
     for depth in depths:
         for width in widths:
             hidden_sizes = build_hidden_sizes(width, depth)
-            for run in range(args.runs):
-                run_seed = args.base_seed + run
+            for run_id in run_ids:
+                run_seed = args.base_seed + int(run_id)
                 set_global_seeds(run_seed)
                 rng = np.random.default_rng(run_seed)
 
@@ -419,7 +439,7 @@ def run_experiment(
 
                 episode_progress = tqdm(
                     total=args.episodes,
-                    desc=f"episodes w{width} d{depth} run{run}",
+                    desc=f"episodes w{width} d{depth} run{run_id}",
                     leave=False,
                 )
                 try:
@@ -480,7 +500,7 @@ def run_experiment(
                         model_for_eval = q_net
                 finally:
                     episode_progress.close()
-                run_dir = log_root / f"w{width}_d{depth}_run{run}"
+                run_dir = log_root / f"w{width}_d{depth}_run{run_id}"
                 run_dir.mkdir(parents=True, exist_ok=True)
                 if args.algo == "trpo":
                     save_model_state(policy_net, run_dir / "policy.pt")
@@ -490,7 +510,7 @@ def run_experiment(
                 meta = {
                     "width": float(width),
                     "depth": float(depth),
-                    "run": float(run),
+                    "run": float(run_id),
                     "num_params": float(count_parameters(model_for_eval)),
                 }
                 save_episode_metrics(
@@ -578,7 +598,7 @@ def run_experiment(
                 run_row = {
                     "width": float(width),
                     "depth": float(depth),
-                    "run": float(run),
+                    "run": float(run_id),
                     "num_params": float(count_parameters(model_for_eval)),
                     "train_return": float(train_return),
                     "test_return": float(test_return),
@@ -601,6 +621,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--depths", default="2")
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--base-seed", type=int, default=0)
+    parser.add_argument("--run-id", type=int, default=None)
     parser.add_argument("--algo", choices=["dqn", "trpo"], default="dqn")
     parser.add_argument("--grid-size", type=int, default=8)
     parser.add_argument("--obstacle-prob", type=float, default=0.2)
@@ -629,6 +650,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--log-x", dest="log_x", action="store_true", default=True)
     parser.add_argument("--no-log-x", dest="log_x", action="store_false")
     parser.add_argument("--log-dir", default=None)
+    parser.add_argument("--collect-only", action="store_true", default=False)
     parser.add_argument("--video-seeds", default="")
     parser.add_argument("--video-fps", type=int, default=6)
     parser.add_argument("--fim-samples", type=int, default=64)
@@ -648,6 +670,10 @@ def main() -> None:
     if not args.log_dir:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         args.log_dir = str(Path("results") / timestamp)
+
+    if args.collect_only:
+        collect_results(Path(args.log_dir), log_x=args.log_x)
+        return
 
     if args.sanity_check:
         run_sanity_check(args)
