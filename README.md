@@ -83,7 +83,7 @@ Training
 - `--target-update` (default: `500`): Target network sync interval in environment steps. Set `0` to disable updates.
 - `--eps-start` (default: `1.0`): Initial epsilon for epsilon-greedy exploration.
 - `--eps-end` (default: `0.05`): Final epsilon after decay.
-- `--eps-decay-steps` (default: `30000`): Linear decay horizon in environment steps from `eps-start` to `eps-end`.
+- `--eps-decay-episodes` (default: 30% of `--episodes`): Linear decay horizon in episodes from `eps-start` to `eps-end`.
 - `--early-stop-return` (default: `0.7`): Return threshold for early stopping.
 - `--early-stop-episodes` (default: `10`): Number of consecutive episodes above `early-stop-return` required to stop; set `0` to disable.
 
@@ -107,7 +107,7 @@ Logging and plots
 - `--collect-only` (default: disabled): Skip training and compile `metrics.csv`, `summary.csv`, and `curve.png` from existing run directories.
 
 Videos
-- `--video-seeds` (default: empty): Comma/range seed list to render as GIFs (e.g., `1,2,10-12`). Empty string disables video logging.
+- `--video-seeds` (default: unset): Comma/range seed list to render as GIFs (e.g., `1,2,10-12`). When unset, renders the first 5 training seeds and first 5 test seeds (or all if fewer). Use `--video-seeds none` to disable.
 - `--video-fps` (default: `6`): Playback FPS for saved GIFs.
 
 Episode curves

@@ -54,7 +54,6 @@ python -m rl_dd.experiment \
   --runs 1 \
   --run-id "${RUN_ID}" \
   --episodes 20000 \
-  --eps-decay-steps 256000 \
   --video-fps 12 \
   --cpu \
   --early-stop-episodes 0 \

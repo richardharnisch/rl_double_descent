@@ -106,7 +106,9 @@ def build_model(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Evaluate a saved model on seeded maps.")
+    parser = argparse.ArgumentParser(
+        description="Evaluate a saved model on seeded maps."
+    )
     parser.add_argument("--algo", choices=["dqn", "trpo"], default="dqn")
     parser.add_argument("--model-path", required=True)
     parser.add_argument("--seeds", required=True)
@@ -129,10 +131,14 @@ def main() -> None:
     if args.width is None or args.depth is None:
         inferred = infer_arch(model_path)
         if inferred is None:
-            raise ValueError("Provide --width and --depth (could not infer from metrics.csv).")
+            raise ValueError(
+                "Provide --width and --depth (could not infer from metrics.csv)."
+            )
         args.width, args.depth = inferred
 
-    device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda")
+    device = torch.device(
+        "cpu" if args.cpu or not torch.cuda.is_available() else "cuda"
+    )
     if args.start is not None and args.end is not None:
         if args.start == args.end:
             raise ValueError("--start and --end must be different.")

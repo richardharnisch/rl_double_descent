@@ -59,7 +59,12 @@ class GridWorldEnv(gym.Env):
             if "goal_corner" in options:
                 goal_corner = int(options["goal_corner"])
         self._set_start_goal(start_corner, goal_corner)
-        if seed is not None or self._walls is None or options or self._needs_new_map(start_corner, goal_corner):
+        if (
+            seed is not None
+            or self._walls is None
+            or options
+            or self._needs_new_map(start_corner, goal_corner)
+        ):
             self._walls = self._generate_grid()
         self._agent_pos = self._start_pos
         self._steps = 0
@@ -176,7 +181,9 @@ class GridWorldEnv(gym.Env):
                 queue.append(nxt)
         return False
 
-    def _set_start_goal(self, start_corner: Optional[int], goal_corner: Optional[int]) -> None:
+    def _set_start_goal(
+        self, start_corner: Optional[int], goal_corner: Optional[int]
+    ) -> None:
         if start_corner is not None and goal_corner is not None:
             if start_corner == goal_corner:
                 raise ValueError("start_corner and goal_corner must be different.")
@@ -205,5 +212,7 @@ class GridWorldEnv(gym.Env):
             return (size - 1, 0)
         raise ValueError(f"corner must be in [0, 3], got {corner}")
 
-    def _needs_new_map(self, start_corner: Optional[int], goal_corner: Optional[int]) -> bool:
+    def _needs_new_map(
+        self, start_corner: Optional[int], goal_corner: Optional[int]
+    ) -> bool:
         return start_corner is None or goal_corner is None
