@@ -201,8 +201,9 @@ def plot_results(summary: List[Dict[str, float]], path: Path, log_x: bool) -> No
 
 def collect_results(log_root: Path, log_x: bool) -> None:
     metrics_files = sorted(log_root.glob("w*_d*_run*/metrics.csv"))
+    print(f"Found {len(metrics_files)} metrics files.")
     results: List[Dict[str, float]] = []
-    for metrics_path in metrics_files:
+    for metrics_path in tqdm(metrics_files):
         with metrics_path.open("r", newline="") as handle:
             reader = csv.DictReader(handle)
             for row in reader:
