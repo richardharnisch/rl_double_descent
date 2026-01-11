@@ -52,7 +52,7 @@ def rollout_episode(
     seed: int,
     device: torch.device,
     max_steps: int,
-) -> Tuple[List[np.ndarray], float]:
+) -> Tuple[List[np.ndarray], float, int, int]:
     was_training = model.training
     model.eval()
     obs, _ = env.reset(seed=seed)
@@ -60,6 +60,7 @@ def rollout_episode(
     total_return = 0.0
     done = False
     steps = 0
+    success = 0
     while not done and steps < max_steps:
         obs_t = torch.from_numpy(obs).float().to(device).unsqueeze(0)
         with torch.no_grad():
@@ -69,10 +70,12 @@ def rollout_episode(
         total_return += reward
         frames.append(env.render())
         done = terminated or truncated
+        if terminated:
+            success = 1
         steps += 1
     if was_training:
         model.train()
-    return frames, total_return
+    return frames, total_return, success, steps
 
 
 def infer_arch(model_path: Path) -> Optional[Tuple[int, int]]:
@@ -114,6 +117,10 @@ def main() -> None:
     parser.add_argument("--obstacle-prob", type=float, default=0.2)
     parser.add_argument("--max-steps", type=int, default=64)
     parser.add_argument("--frame-stack", type=int, default=2)
+    parser.add_argument("--start", type=int, default=None)
+    parser.add_argument("--end", type=int, default=None)
+    parser.add_argument("--start-corner", dest="start", type=int, default=None)
+    parser.add_argument("--goal-corner", dest="end", type=int, default=None)
     parser.add_argument("--video-fps", type=int, default=6)
     parser.add_argument("--cpu", action="store_true", default=False)
     args = parser.parse_args()
@@ -126,11 +133,17 @@ def main() -> None:
         args.width, args.depth = inferred
 
     device = torch.device("cpu" if args.cpu or not torch.cuda.is_available() else "cuda")
+    if args.start is not None and args.end is not None:
+        if args.start == args.end:
+            raise ValueError("--start and --end must be different.")
+
     env_config = GridWorldConfig(
         grid_size=args.grid_size,
         obstacle_prob=args.obstacle_prob,
         max_steps=args.max_steps,
         frame_stack=args.frame_stack,
+        start_corner=args.start,
+        goal_corner=args.end,
     )
     env = GridWorldEnv(env_config, seed=0)
     obs_dim = env.observation_space.shape[0]
@@ -143,9 +156,30 @@ def main() -> None:
     seeds = parse_int_list(args.seeds)
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    results = []
     for seed in seeds:
-        frames, _ = rollout_episode(env, model, int(seed), device, args.max_steps)
+        frames, total_return, success, steps = rollout_episode(
+            env,
+            model,
+            int(seed),
+            device,
+            args.max_steps,
+        )
         save_gif(frames, out_dir / f"seed{seed}.gif", args.video_fps)
+        results.append(
+            {
+                "seed": int(seed),
+                "return": float(total_return),
+                "success": int(success),
+                "length": int(steps),
+            }
+        )
+
+    if results:
+        with (out_dir / "eval_results.csv").open("w", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(results[0].keys()))
+            writer.writeheader()
+            writer.writerows(results)
 
 
 if __name__ == "__main__":

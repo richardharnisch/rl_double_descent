@@ -303,6 +303,8 @@ def run_sanity_check(args: argparse.Namespace) -> None:
         grid_size=5,
         obstacle_prob=0.0,
         max_steps=32,
+        start_corner=args.start,
+        goal_corner=args.end,
     )
     train_config = TrainConfig(
         episodes=args.sanity_episodes,
@@ -403,6 +405,8 @@ def run_experiment(
         grid_size=args.grid_size,
         obstacle_prob=args.obstacle_prob,
         max_steps=args.max_steps,
+        start_corner=args.start,
+        goal_corner=args.end,
     )
     train_config = TrainConfig(
         episodes=args.episodes,
@@ -625,6 +629,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--algo", choices=["dqn", "trpo"], default="dqn")
     parser.add_argument("--grid-size", type=int, default=8)
     parser.add_argument("--obstacle-prob", type=float, default=0.2)
+    parser.add_argument("--start", type=int, default=None)
+    parser.add_argument("--end", type=int, default=None)
     parser.add_argument("--episodes", type=int, default=2000)
     parser.add_argument("--max-steps", type=int, default=64)
     parser.add_argument("--batch-size", type=int, default=64)
@@ -666,6 +672,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main() -> None:
     parser = build_arg_parser()
     args = parser.parse_args()
+
+    if args.start is not None and args.end is not None:
+        if args.start == args.end:
+            raise ValueError("--start and --end must be different.")
 
     if not args.log_dir:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

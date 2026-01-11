@@ -69,6 +69,9 @@ Environment
 - `--grid-size` (default: `8`): Square grid side length. Observation uses a per-tile one-hot encoding (4 channels) and is flattened.
 - `--obstacle-prob` (default: `0.2`): Bernoulli probability of a wall in each cell (except start/goal). Maps are regenerated per seed until solvable.
 - `--max-steps` (default: `64`): Maximum steps per episode before truncation (applies to training, eval, and video rollouts).
+- `--start` (default: unset): Start corner index (0=top-left, 1=top-right, 2=bottom-right, 3=bottom-left). Unset means randomized.
+- `--end` (default: unset): Goal corner index (0=top-left, 1=top-right, 2=bottom-right, 3=bottom-left). Unset means randomized.
+When one of `--start` or `--end` is unset, the other is sampled from the remaining corners; if both are unset, both corners are randomized (but always different).
 The observation is a 2-frame stack: two consecutive one-hot grids are flattened and concatenated.
 
 Training

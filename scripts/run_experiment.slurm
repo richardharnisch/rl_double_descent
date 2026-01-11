@@ -58,6 +58,8 @@ python -m rl_dd.experiment \
   --video-fps 12 \
   --cpu \
   --early-stop-episodes 0 \
+  --start 0 \
+  --end 2 \
   --log-dir "${LOG_DIR}" \
   --widths "${WIDTH}" \
   --video-seeds 41-55
