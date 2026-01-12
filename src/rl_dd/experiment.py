@@ -304,6 +304,13 @@ def run_sanity_check(args: argparse.Namespace) -> None:
         grid_size=5,
         obstacle_prob=0.0,
         max_steps=32,
+        start_corner=args.start,
+        goal_corner=args.end,
+    )
+    sanity_decay = (
+        args.eps_decay_episodes
+        if args.eps_decay_episodes is not None
+        else max(1, int(round(0.3 * args.sanity_episodes)))
     )
     train_config = TrainConfig(
         episodes=args.sanity_episodes,
@@ -315,7 +322,7 @@ def run_sanity_check(args: argparse.Namespace) -> None:
         target_update_interval=500,
         eps_start=1.0,
         eps_end=0.05,
-        eps_decay_steps=30_000,
+        eps_decay_episodes=sanity_decay,
     )
 
     set_global_seeds(0)
@@ -404,6 +411,13 @@ def run_experiment(
         grid_size=args.grid_size,
         obstacle_prob=args.obstacle_prob,
         max_steps=args.max_steps,
+        start_corner=args.start,
+        goal_corner=args.end,
+    )
+    decay_episodes = (
+        args.eps_decay_episodes
+        if args.eps_decay_episodes is not None
+        else max(1, int(round(0.3 * args.episodes)))
     )
     train_config = TrainConfig(
         episodes=args.episodes,
@@ -415,7 +429,7 @@ def run_experiment(
         target_update_interval=args.target_update,
         eps_start=args.eps_start,
         eps_end=args.eps_end,
-        eps_decay_steps=args.eps_decay_steps,
+        eps_decay_episodes=decay_episodes,
         early_stop_return=args.early_stop_return,
         early_stop_episodes=args.early_stop_episodes,
     )
@@ -582,19 +596,31 @@ def run_experiment(
                 )
 
                 if train_seeds and test_seeds:
-                    if args.video_seeds:
-                        seeds_to_render = parse_int_list(args.video_seeds)
-                        for seed in seeds_to_render:
-                            frames, _ = rollout_episode(
-                                env,
-                                model_for_eval,
-                                int(seed),
-                                device,
-                                args.max_steps,
-                            )
-                            save_gif(
-                                frames, run_dir / f"seed{seed}.gif", args.video_fps
-                            )
+                    if args.video_seeds and args.video_seeds.strip():
+                        if args.video_seeds.strip().lower() in {
+                            "none",
+                            "off",
+                            "disable",
+                            "disabled",
+                        }:
+                            seeds_to_render: List[int] = []
+                        else:
+                            seeds_to_render = parse_int_list(args.video_seeds)
+                    else:
+                        seeds_to_render = []
+                        for seed in list(train_seeds[:5]) + list(test_seeds[:5]):
+                            seed_int = int(seed)
+                            if seed_int not in seeds_to_render:
+                                seeds_to_render.append(seed_int)
+                    for seed in seeds_to_render:
+                        frames, _ = rollout_episode(
+                            env,
+                            model_for_eval,
+                            int(seed),
+                            device,
+                            args.max_steps,
+                        )
+                        save_gif(frames, run_dir / f"seed{seed}.gif", args.video_fps)
 
                 run_row = {
                     "width": float(width),
@@ -626,6 +652,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--algo", choices=["dqn", "trpo"], default="dqn")
     parser.add_argument("--grid-size", type=int, default=8)
     parser.add_argument("--obstacle-prob", type=float, default=0.2)
+    parser.add_argument("--start", type=int, default=None)
+    parser.add_argument("--end", type=int, default=None)
     parser.add_argument("--episodes", type=int, default=2000)
     parser.add_argument("--max-steps", type=int, default=64)
     parser.add_argument("--batch-size", type=int, default=64)
@@ -635,7 +663,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--target-update", type=int, default=500)
     parser.add_argument("--eps-start", type=float, default=1.0)
     parser.add_argument("--eps-end", type=float, default=0.05)
-    parser.add_argument("--eps-decay-steps", type=int, default=30_000)
+    parser.add_argument("--eps-decay-episodes", type=int, default=None)
     parser.add_argument("--early-stop-return", type=float, default=0.7)
     parser.add_argument("--early-stop-episodes", type=int, default=10)
     parser.add_argument("--trpo-max-kl", type=float, default=1e-2)
@@ -667,6 +695,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main() -> None:
     parser = build_arg_parser()
     args = parser.parse_args()
+
+    if args.start is not None and args.end is not None:
+        if args.start == args.end:
+            raise ValueError("--start and --end must be different.")
 
     if not args.log_dir:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

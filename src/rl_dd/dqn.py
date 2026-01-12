@@ -9,7 +9,9 @@ from torch import nn
 
 
 class QNetwork(nn.Module):
-    def __init__(self, input_dim: int, action_dim: int, hidden_sizes: Iterable[int]) -> None:
+    def __init__(
+        self, input_dim: int, action_dim: int, hidden_sizes: Iterable[int]
+    ) -> None:
         super().__init__()
         layers: List[nn.Module] = []
         prev_dim = input_dim

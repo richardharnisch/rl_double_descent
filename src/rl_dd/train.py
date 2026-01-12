@@ -22,7 +22,7 @@ class TrainConfig:
     target_update_interval: int = 500
     eps_start: float = 1.0
     eps_end: float = 0.05
-    eps_decay_steps: int = 30_000
+    eps_decay_episodes: int = 600
     early_stop_return: float = 0.7
     early_stop_episodes: int = 10
 
@@ -68,7 +68,7 @@ def train_dqn(
     train_seed_list = list(train_seeds)
     early_stop_count = 0
 
-    for _ in range(config.episodes):
+    for episode_idx in range(config.episodes):
         env_seed = int(rng.choice(train_seed_list))
         obs, _ = env.reset(seed=env_seed)
         episode_return = 0.0
@@ -77,10 +77,10 @@ def train_dqn(
         for _ in range(config.max_steps):
             episode_length += 1
             eps = linear_epsilon(
-                global_step,
+                episode_idx,
                 config.eps_start,
                 config.eps_end,
-                config.eps_decay_steps,
+                config.eps_decay_episodes,
             )
             if rng.random() < eps:
                 action = int(rng.integers(0, env.action_space.n))
@@ -99,7 +99,9 @@ def train_dqn(
 
             if buffer.size >= config.batch_size:
                 batch = buffer.sample(config.batch_size, device)
-                q_values = q_net(batch.obs).gather(1, batch.actions.unsqueeze(1)).squeeze(1)
+                q_values = (
+                    q_net(batch.obs).gather(1, batch.actions.unsqueeze(1)).squeeze(1)
+                )
                 with torch.no_grad():
                     next_q = target_net(batch.next_obs).max(1)[0]
                     target = batch.rewards + config.gamma * (1.0 - batch.dones) * next_q
@@ -108,7 +110,10 @@ def train_dqn(
                 loss.backward()
                 optimizer.step()
 
-            if config.target_update_interval > 0 and global_step % config.target_update_interval == 0:
+            if (
+                config.target_update_interval > 0
+                and global_step % config.target_update_interval == 0
+            ):
                 target_net.load_state_dict(q_net.state_dict())
 
             if done:

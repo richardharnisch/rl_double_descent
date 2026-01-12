@@ -16,6 +16,8 @@ class GridWorldConfig:
     max_steps: int = 64
     max_gen_attempts: int = 200
     frame_stack: int = 2
+    start_corner: Optional[int] = None
+    goal_corner: Optional[int] = None
 
 
 class GridWorldEnv(gym.Env):
@@ -33,8 +35,13 @@ class GridWorldEnv(gym.Env):
             dtype=np.float32,
         )
         self._walls: Optional[np.ndarray] = None
-        self._agent_pos: Tuple[int, int] = (0, 0)
+        self._start_pos: Tuple[int, int] = (0, 0)
         self._goal_pos: Tuple[int, int] = (config.grid_size - 1, config.grid_size - 1)
+        if config.start_corner is not None and config.goal_corner is not None:
+            if config.start_corner == config.goal_corner:
+                raise ValueError("start_corner and goal_corner must be different.")
+        self._set_start_goal(config.start_corner, config.goal_corner)
+        self._agent_pos: Tuple[int, int] = self._start_pos
         self._steps = 0
         self._cell_size = 16
         self._obs_stack: deque[np.ndarray] = deque(maxlen=config.frame_stack)
@@ -43,10 +50,23 @@ class GridWorldEnv(gym.Env):
         super().reset(seed=seed)
         if seed is not None:
             self.rng = np.random.default_rng(seed)
+
+        start_corner = self.config.start_corner
+        goal_corner = self.config.goal_corner
+        if options:
+            if "start_corner" in options:
+                start_corner = int(options["start_corner"])
+            if "goal_corner" in options:
+                goal_corner = int(options["goal_corner"])
+        self._set_start_goal(start_corner, goal_corner)
+        if (
+            seed is not None
+            or self._walls is None
+            or options
+            or self._needs_new_map(start_corner, goal_corner)
+        ):
             self._walls = self._generate_grid()
-        elif self._walls is None:
-            self._walls = self._generate_grid()
-        self._agent_pos = (0, 0)
+        self._agent_pos = self._start_pos
         self._steps = 0
         frame = self._get_obs()
         self._obs_stack.clear()
@@ -118,8 +138,10 @@ class GridWorldEnv(gym.Env):
         size = self.config.grid_size
         for _ in range(self.config.max_gen_attempts):
             walls = self.rng.random((size, size)) < self.config.obstacle_prob
-            walls[0, 0] = False
-            walls[size - 1, size - 1] = False
+            start_r, start_c = self._start_pos
+            goal_r, goal_c = self._goal_pos
+            walls[start_r, start_c] = False
+            walls[goal_r, goal_c] = False
             if self._has_path(walls):
                 return walls
         return np.zeros((size, size), dtype=bool)
@@ -138,8 +160,8 @@ class GridWorldEnv(gym.Env):
 
     def _has_path(self, walls: np.ndarray) -> bool:
         size = self.config.grid_size
-        start = (0, 0)
-        goal = (size - 1, size - 1)
+        start = self._start_pos
+        goal = self._goal_pos
         queue = deque([start])
         visited = {start}
         while queue:
@@ -158,3 +180,39 @@ class GridWorldEnv(gym.Env):
                 visited.add(nxt)
                 queue.append(nxt)
         return False
+
+    def _set_start_goal(
+        self, start_corner: Optional[int], goal_corner: Optional[int]
+    ) -> None:
+        if start_corner is not None and goal_corner is not None:
+            if start_corner == goal_corner:
+                raise ValueError("start_corner and goal_corner must be different.")
+        if start_corner is None and goal_corner is None:
+            start_corner = int(self.rng.integers(0, 4))
+            choices = [i for i in range(4) if i != start_corner]
+            goal_corner = int(self.rng.choice(choices))
+        elif start_corner is None:
+            choices = [i for i in range(4) if i != goal_corner]
+            start_corner = int(self.rng.choice(choices))
+        elif goal_corner is None:
+            choices = [i for i in range(4) if i != start_corner]
+            goal_corner = int(self.rng.choice(choices))
+        self._start_pos = self._corner_to_pos(int(start_corner))
+        self._goal_pos = self._corner_to_pos(int(goal_corner))
+
+    def _corner_to_pos(self, corner: int) -> Tuple[int, int]:
+        size = self.config.grid_size
+        if corner == 0:
+            return (0, 0)
+        if corner == 1:
+            return (0, size - 1)
+        if corner == 2:
+            return (size - 1, size - 1)
+        if corner == 3:
+            return (size - 1, 0)
+        raise ValueError(f"corner must be in [0, 3], got {corner}")
+
+    def _needs_new_map(
+        self, start_corner: Optional[int], goal_corner: Optional[int]
+    ) -> bool:
+        return start_corner is None or goal_corner is None

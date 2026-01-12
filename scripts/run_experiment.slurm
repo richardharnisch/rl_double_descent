@@ -58,10 +58,11 @@ python -m rl_dd.experiment \
   --test-seeds 101-200 \
   --runs 1 \
   --run-id "${RUN_ID}" \
-  --episodes 50000 \
-  --eps-decay-steps 640000 \
+  --episodes 20000 \
   --video-fps 12 \
   --early-stop-episodes 0 \
+  --start 0 \
+  --end 2 \
   --log-dir "${LOG_DIR}" \
   --widths "${WIDTH}" \
   --video-seeds 96-105

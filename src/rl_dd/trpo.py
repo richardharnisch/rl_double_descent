@@ -10,7 +10,9 @@ from torch.distributions import Categorical
 
 
 class PolicyNetwork(nn.Module):
-    def __init__(self, input_dim: int, action_dim: int, hidden_sizes: Iterable[int]) -> None:
+    def __init__(
+        self, input_dim: int, action_dim: int, hidden_sizes: Iterable[int]
+    ) -> None:
         super().__init__()
         layers: List[nn.Module] = []
         prev_dim = input_dim
@@ -59,12 +61,16 @@ class TRPOConfig:
     early_stop_episodes: int = 10
 
 
-def build_policy(input_dim: int, action_dim: int, hidden_sizes: Iterable[int], device: torch.device) -> PolicyNetwork:
+def build_policy(
+    input_dim: int, action_dim: int, hidden_sizes: Iterable[int], device: torch.device
+) -> PolicyNetwork:
     net = PolicyNetwork(input_dim, action_dim, hidden_sizes)
     return net.to(device)
 
 
-def build_value(input_dim: int, hidden_sizes: Iterable[int], device: torch.device) -> ValueNetwork:
+def build_value(
+    input_dim: int, hidden_sizes: Iterable[int], device: torch.device
+) -> ValueNetwork:
     net = ValueNetwork(input_dim, hidden_sizes)
     return net.to(device)
 
@@ -114,7 +120,9 @@ def _flat_grad(grads: Iterable[torch.Tensor]) -> torch.Tensor:
     return torch.cat([g.contiguous().view(-1) for g in grads])
 
 
-def _conjugate_gradient(fvp, b, nsteps: int, residual_tol: float = 1e-10) -> torch.Tensor:
+def _conjugate_gradient(
+    fvp, b, nsteps: int, residual_tol: float = 1e-10
+) -> torch.Tensor:
     x = torch.zeros_like(b)
     r = b.clone()
     p = b.clone()
@@ -186,7 +194,10 @@ def train_trpo(
         batch_steps = 0
         stop_training = False
 
-        while episodes_in_batch < config.batch_episodes and total_episodes < config.episodes:
+        while (
+            episodes_in_batch < config.batch_episodes
+            and total_episodes < config.episodes
+        ):
             env_seed = int(rng.choice(train_seed_list))
             obs, _ = env.reset(seed=env_seed)
             done = False
@@ -210,7 +221,9 @@ def train_trpo(
                 action = dist.sample()
                 log_prob = dist.log_prob(action)
 
-                next_obs, reward, terminated, truncated, _ = env.step(int(action.item()))
+                next_obs, reward, terminated, truncated, _ = env.step(
+                    int(action.item())
+                )
                 done = terminated or truncated
 
                 obs_list.append(obs)
@@ -260,7 +273,9 @@ def train_trpo(
 
         obs_batch = torch.from_numpy(np.array(batch_obs, dtype=np.float32)).to(device)
         actions_batch = torch.tensor(batch_actions, dtype=torch.int64, device=device)
-        old_log_probs = torch.tensor(batch_log_probs, dtype=torch.float32, device=device)
+        old_log_probs = torch.tensor(
+            batch_log_probs, dtype=torch.float32, device=device
+        )
 
         returns_t = torch.tensor(batch_returns, dtype=torch.float32, device=device)
         adv_t = torch.tensor(batch_advantages, dtype=torch.float32, device=device)
@@ -323,7 +338,7 @@ def train_trpo(
         final_kl = float("nan")
 
         for step in range(config.backtrack_iters):
-            step_frac = config.backtrack_coeff ** step
+            step_frac = config.backtrack_coeff**step
             new_params = old_params + step_frac * full_step
             _set_params(params, new_params)
             new_loss = float(surrogate_loss().item())
