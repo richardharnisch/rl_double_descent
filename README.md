@@ -66,7 +66,7 @@ Model size
 - `--algo` (default: `dqn`): Algorithm choice (`dqn` or `trpo`). DQN-specific flags are ignored when using TRPO.
 
 Environment
-- `--grid-size` (default: `8`): Square grid side length. Observation uses a per-tile one-hot encoding (4 channels) and is flattened.
+- `--grid-size` (default: `8`): Square grid side length. Observation uses a per-tile one-hot encoding (4 channels) and is flattened. Also has 2-frame stacking.
 - `--obstacle-prob` (default: `0.2`): Bernoulli probability of a wall in each cell (except start/goal). Maps are regenerated per seed until solvable.
 - `--max-steps` (default: `64`): Maximum steps per episode before truncation (applies to training, eval, and video rollouts).
 - `--start` (default: unset): Start corner index (0=top-left, 1=top-right, 2=bottom-right, 3=bottom-left). Unset means randomized.
