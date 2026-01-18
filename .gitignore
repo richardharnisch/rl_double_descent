@@ -1,3 +1,5 @@
 results/
 slurm/
 **/__pycache__/
+
+uv.lock
