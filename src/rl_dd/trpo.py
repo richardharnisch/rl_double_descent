@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, List, Optional
+from typing import Callable, Iterable, List, Optional
 
 import numpy as np
 import torch
@@ -170,6 +170,8 @@ def train_trpo(
     device: torch.device,
     rng: np.random.Generator,
     progress: Optional[object] = None,
+    log_every: int = 0,
+    log_callback: Optional[Callable[[dict[str, List[float]]], None]] = None,
 ) -> dict[str, List[float]]:
     policy_net.train()
     value_net.train()
@@ -258,6 +260,19 @@ def train_trpo(
                 progress.update(1)
             total_episodes += 1
             episodes_in_batch += 1
+            if (
+                log_every > 0
+                and log_callback is not None
+                and total_episodes % log_every == 0
+            ):
+                log_callback(
+                    {
+                        "episode_returns": episode_returns,
+                        "episode_lengths": episode_lengths,
+                        "update_kl": update_kls,
+                        "update_entropy": update_entropies,
+                    }
+                )
 
             if config.early_stop_episodes > 0:
                 if episode_return >= config.early_stop_return:

@@ -235,6 +235,25 @@ def save_episode_metrics(
     save_csv(path, rows)
 
 
+def save_trpo_updates(
+    update_kl: List[float],
+    update_entropy: List[float],
+    path: Path,
+) -> None:
+    if not update_kl:
+        return
+    rows: List[Dict[str, object]] = []
+    for idx, (kl_val, ent_val) in enumerate(zip(update_kl, update_entropy)):
+        rows.append(
+            {
+                "update": idx,
+                "kl": float(kl_val),
+                "entropy": float(ent_val),
+            }
+        )
+    save_csv(path, rows)
+
+
 def plot_episode_metrics(
     returns: List[float],
     lengths: List[int],
@@ -452,11 +471,15 @@ def run_experiment(
                 obs_dim = env.observation_space.shape[0]
                 action_dim = env.action_space.n
 
+                run_dir = log_root / f"w{width}_d{depth}_run{run_id}"
+                run_dir.mkdir(parents=True, exist_ok=True)
+
                 episode_progress = tqdm(
                     total=args.episodes,
                     desc=f"episodes w{width} d{depth} run{run_id}",
                     leave=False,
                 )
+                write_run_logs = None
                 try:
                     if args.algo == "trpo":
                         trpo_config = TRPOConfig(
@@ -479,6 +502,33 @@ def run_experiment(
                             obs_dim, action_dim, hidden_sizes, device
                         )
                         value_net = build_value(obs_dim, hidden_sizes, device)
+                        model_for_eval = policy_net
+                        num_params = float(count_parameters(model_for_eval))
+                        run_meta = {
+                            "width": float(width),
+                            "depth": float(depth),
+                            "run": float(run_id),
+                            "num_params": num_params,
+                        }
+
+                        def write_run_logs(train_info: Dict[str, List[float]]) -> None:
+                            save_episode_metrics(
+                                train_info["episode_returns"],
+                                train_info["episode_lengths"],
+                                run_dir / "episodes.csv",
+                                run_meta,
+                            )
+                            plot_episode_metrics(
+                                train_info["episode_returns"],
+                                train_info["episode_lengths"],
+                                run_dir / "episodes.png",
+                            )
+                            save_trpo_updates(
+                                train_info.get("update_kl", []),
+                                train_info.get("update_entropy", []),
+                                run_dir / "trpo_updates.csv",
+                            )
+
                         train_info = train_trpo(
                             env,
                             policy_net,
@@ -488,8 +538,9 @@ def run_experiment(
                             device,
                             rng,
                             progress=episode_progress,
+                            log_every=args.log_every,
+                            log_callback=write_run_logs if args.log_every > 0 else None,
                         )
-                        model_for_eval = policy_net
                     else:
                         q_net = build_network(obs_dim, action_dim, hidden_sizes, device)
                         target_net = build_network(
@@ -499,6 +550,27 @@ def run_experiment(
                         buffer = ReplayBuffer(
                             train_config.buffer_size, obs_dim, seed=run_seed
                         )
+                        model_for_eval = q_net
+                        num_params = float(count_parameters(model_for_eval))
+                        run_meta = {
+                            "width": float(width),
+                            "depth": float(depth),
+                            "run": float(run_id),
+                            "num_params": num_params,
+                        }
+
+                        def write_run_logs(train_info: Dict[str, List[float]]) -> None:
+                            save_episode_metrics(
+                                train_info["episode_returns"],
+                                train_info["episode_lengths"],
+                                run_dir / "episodes.csv",
+                                run_meta,
+                            )
+                            plot_episode_metrics(
+                                train_info["episode_returns"],
+                                train_info["episode_lengths"],
+                                run_dir / "episodes.png",
+                            )
 
                         train_info = train_dqn(
                             env,
@@ -511,47 +583,18 @@ def run_experiment(
                             device,
                             rng,
                             progress=episode_progress,
+                            log_every=args.log_every,
+                            log_callback=write_run_logs if args.log_every > 0 else None,
                         )
-                        model_for_eval = q_net
                 finally:
                     episode_progress.close()
-                run_dir = log_root / f"w{width}_d{depth}_run{run_id}"
-                run_dir.mkdir(parents=True, exist_ok=True)
+                if write_run_logs is not None:
+                    write_run_logs(train_info)
                 if args.algo == "trpo":
                     save_model_state(policy_net, run_dir / "policy.pt")
                     save_model_state(value_net, run_dir / "value.pt")
                 else:
                     save_model_state(model_for_eval, run_dir / "model.pt")
-                meta = {
-                    "width": float(width),
-                    "depth": float(depth),
-                    "run": float(run_id),
-                    "num_params": float(count_parameters(model_for_eval)),
-                }
-                save_episode_metrics(
-                    train_info["episode_returns"],
-                    train_info["episode_lengths"],
-                    run_dir / "episodes.csv",
-                    meta,
-                )
-                plot_episode_metrics(
-                    train_info["episode_returns"],
-                    train_info["episode_lengths"],
-                    run_dir / "episodes.png",
-                )
-                if args.algo == "trpo" and train_info.get("update_kl"):
-                    update_rows: List[Dict[str, object]] = []
-                    for idx, (kl_val, ent_val) in enumerate(
-                        zip(train_info["update_kl"], train_info["update_entropy"])
-                    ):
-                        update_rows.append(
-                            {
-                                "update": idx,
-                                "kl": float(kl_val),
-                                "entropy": float(ent_val),
-                            }
-                        )
-                    save_csv(run_dir / "trpo_updates.csv", update_rows)
 
                 if args.algo == "trpo":
                     train_return = evaluate_policy_trpo(
@@ -626,7 +669,7 @@ def run_experiment(
                     "width": float(width),
                     "depth": float(depth),
                     "run": float(run_id),
-                    "num_params": float(count_parameters(model_for_eval)),
+                    "num_params": num_params,
                     "train_return": float(train_return),
                     "test_return": float(test_return),
                     "fim_trace": float(fim_trace),
@@ -680,6 +723,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-log-x", dest="log_x", action="store_false")
     parser.add_argument("--log-dir", default=None)
     parser.add_argument("--collect-only", action="store_true", default=False)
+    parser.add_argument("--log-every", type=int, default=0)
     parser.add_argument("--video-seeds", default="")
     parser.add_argument("--video-fps", type=int, default=6)
     parser.add_argument("--fim-samples", type=int, default=64)

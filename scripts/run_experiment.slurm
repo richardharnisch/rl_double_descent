@@ -2,15 +2,15 @@
 #SBATCH --job-name=rl-dd
 #SBATCH --output=slurm/%x-%j.out
 #SBATCH --error=slurm/%x-%j.err
-#SBATCH --time=12:00:00
+#SBATCH --time=24:00:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=64G
 #SBATCH --partition=gpu
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=1
 
-# Uncomment this for a different job
-# # SBATCH --partition=regular
+# Uncomment this for a different node type
+# #SBATCH --partition=regular
 
 set -euo pipefail
 
@@ -22,10 +22,10 @@ mkdir -p slurm results
 eval "$(conda shell.bash hook)"
 source .venv/bin/activate
 
-WIDTHS=(1024 2048 4096)
-DEPTHS=(8 9 10)
+WIDTHS=(4 16 64 256 1024)
+DEPTHS=(3)
 RUNS=3
-LOG_DIR="results/100seed_manysizes_50k"
+LOG_DIR="results/500seed_250k"
 
 if [[ "${1:-}" == "--collect-only" ]]; then
   python -m rl_dd.experiment \
@@ -54,15 +54,15 @@ DEPTH="${DEPTHS[$DEPTH_INDEX]}"
 python -m rl_dd.experiment \
   --algo trpo \
   --depths "${DEPTH}" \
-  --train-seeds 1-100 \
-  --test-seeds 101-200 \
+  --train-seeds 1-500 \
+  --test-seeds 501-1000 \
   --runs 1 \
   --run-id "${RUN_ID}" \
-  --episodes 20000 \
+  --episodes 250000 \
   --video-fps 12 \
   --early-stop-episodes 0 \
   --start 0 \
   --end 2 \
   --log-dir "${LOG_DIR}" \
   --widths "${WIDTH}" \
-  --video-seeds 96-105
+  --log-every 1000

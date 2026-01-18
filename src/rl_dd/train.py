@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Optional
+from typing import Callable, Dict, Iterable, List, Optional
 
 import numpy as np
 import torch
@@ -58,6 +58,8 @@ def train_dqn(
     device: torch.device,
     rng: np.random.Generator,
     progress: Optional[object] = None,
+    log_every: int = 0,
+    log_callback: Optional[Callable[[Dict[str, List[float]]], None]] = None,
 ) -> Dict[str, List[float]]:
     q_net.train()
     target_net.load_state_dict(q_net.state_dict())
@@ -123,6 +125,17 @@ def train_dqn(
         episode_lengths.append(episode_length)
         if progress is not None:
             progress.update(1)
+        if (
+            log_every > 0
+            and log_callback is not None
+            and (episode_idx + 1) % log_every == 0
+        ):
+            log_callback(
+                {
+                    "episode_returns": episode_returns,
+                    "episode_lengths": episode_lengths,
+                }
+            )
         if config.early_stop_episodes > 0:
             if episode_return >= config.early_stop_return:
                 early_stop_count += 1
