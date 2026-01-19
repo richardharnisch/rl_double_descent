@@ -315,6 +315,47 @@ def build_hidden_sizes(width: int, depth: int) -> List[int]:
     return [width for _ in range(depth)]
 
 
+def resolve_video_seeds(
+    train_seeds: List[int],
+    test_seeds: List[int],
+    video_seeds_arg: str,
+) -> List[int]:
+    if not train_seeds or not test_seeds:
+        return []
+    if video_seeds_arg and video_seeds_arg.strip():
+        if video_seeds_arg.strip().lower() in {"none", "off", "disable", "disabled"}:
+            return []
+        return parse_int_list(video_seeds_arg)
+    seeds_to_render: List[int] = []
+    for seed in list(train_seeds[:5]) + list(test_seeds[:5]):
+        seed_int = int(seed)
+        if seed_int not in seeds_to_render:
+            seeds_to_render.append(seed_int)
+    return seeds_to_render
+
+
+def save_videos(
+    env: GridWorldEnv,
+    model: torch.nn.Module,
+    seeds: List[int],
+    run_dir: Path,
+    device: torch.device,
+    max_steps: int,
+    fps: int,
+) -> None:
+    if not seeds:
+        return
+    for seed in seeds:
+        frames, _ = rollout_episode(
+            env,
+            model,
+            int(seed),
+            device,
+            max_steps,
+        )
+        save_gif(frames, run_dir / f"seed{seed}.gif", fps)
+
+
 def run_sanity_check(args: argparse.Namespace) -> None:
     device = torch.device("cpu")
     train_seeds = [0]
@@ -421,6 +462,7 @@ def run_experiment(
     test_seeds = parse_int_list(args.test_seeds)
     widths = parse_widths(args.widths)
     depths = parse_depths(args.depths)
+    seeds_to_render = resolve_video_seeds(train_seeds, test_seeds, args.video_seeds)
     if args.run_id is not None and args.runs != 1:
         raise ValueError("Use --runs 1 when --run-id is set.")
     log_root = Path(args.log_dir)
@@ -528,6 +570,15 @@ def run_experiment(
                                 train_info.get("update_entropy", []),
                                 run_dir / "trpo_updates.csv",
                             )
+                            save_videos(
+                                env,
+                                model_for_eval,
+                                seeds_to_render,
+                                run_dir,
+                                device,
+                                args.max_steps,
+                                args.video_fps,
+                            )
 
                         train_info = train_trpo(
                             env,
@@ -571,6 +622,15 @@ def run_experiment(
                                 train_info["episode_lengths"],
                                 run_dir / "episodes.png",
                             )
+                            save_videos(
+                                env,
+                                model_for_eval,
+                                seeds_to_render,
+                                run_dir,
+                                device,
+                                args.max_steps,
+                                args.video_fps,
+                            )
 
                         train_info = train_dqn(
                             env,
@@ -590,11 +650,12 @@ def run_experiment(
                     episode_progress.close()
                 if write_run_logs is not None:
                     write_run_logs(train_info)
-                if args.algo == "trpo":
-                    save_model_state(policy_net, run_dir / "policy.pt")
-                    save_model_state(value_net, run_dir / "value.pt")
-                else:
-                    save_model_state(model_for_eval, run_dir / "model.pt")
+                if args.save_model:
+                    if args.algo == "trpo":
+                        save_model_state(policy_net, run_dir / "policy.pt")
+                        save_model_state(value_net, run_dir / "value.pt")
+                    else:
+                        save_model_state(model_for_eval, run_dir / "model.pt")
 
                 if args.algo == "trpo":
                     train_return = evaluate_policy_trpo(
@@ -638,32 +699,15 @@ def run_experiment(
                     rng,
                 )
 
-                if train_seeds and test_seeds:
-                    if args.video_seeds and args.video_seeds.strip():
-                        if args.video_seeds.strip().lower() in {
-                            "none",
-                            "off",
-                            "disable",
-                            "disabled",
-                        }:
-                            seeds_to_render: List[int] = []
-                        else:
-                            seeds_to_render = parse_int_list(args.video_seeds)
-                    else:
-                        seeds_to_render = []
-                        for seed in list(train_seeds[:5]) + list(test_seeds[:5]):
-                            seed_int = int(seed)
-                            if seed_int not in seeds_to_render:
-                                seeds_to_render.append(seed_int)
-                    for seed in seeds_to_render:
-                        frames, _ = rollout_episode(
-                            env,
-                            model_for_eval,
-                            int(seed),
-                            device,
-                            args.max_steps,
-                        )
-                        save_gif(frames, run_dir / f"seed{seed}.gif", args.video_fps)
+                save_videos(
+                    env,
+                    model_for_eval,
+                    seeds_to_render,
+                    run_dir,
+                    device,
+                    args.max_steps,
+                    args.video_fps,
+                )
 
                 run_row = {
                     "width": float(width),
@@ -724,6 +768,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--log-dir", default=None)
     parser.add_argument("--collect-only", action="store_true", default=False)
     parser.add_argument("--log-every", type=int, default=0)
+    parser.add_argument("--save-model", dest="save_model", action="store_true", default=True)
+    parser.add_argument("--no-save-model", dest="save_model", action="store_false")
     parser.add_argument("--video-seeds", default="")
     parser.add_argument("--video-fps", type=int, default=6)
     parser.add_argument("--fim-samples", type=int, default=64)
