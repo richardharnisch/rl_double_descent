@@ -171,7 +171,7 @@ def train_trpo(
     rng: np.random.Generator,
     progress: Optional[object] = None,
     log_every: int = 0,
-    log_callback: Optional[Callable[[dict[str, List[float]]], None]] = None,
+    log_callback: Optional[Callable[[int, dict[str, List[float]]], None]] = None,
 ) -> dict[str, List[float]]:
     policy_net.train()
     value_net.train()
@@ -266,6 +266,7 @@ def train_trpo(
                 and total_episodes % log_every == 0
             ):
                 log_callback(
+                    total_episodes,
                     {
                         "episode_returns": episode_returns,
                         "episode_lengths": episode_lengths,

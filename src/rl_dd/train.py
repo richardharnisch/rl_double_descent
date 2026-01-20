@@ -59,7 +59,7 @@ def train_dqn(
     rng: np.random.Generator,
     progress: Optional[object] = None,
     log_every: int = 0,
-    log_callback: Optional[Callable[[Dict[str, List[float]]], None]] = None,
+    log_callback: Optional[Callable[[int, Dict[str, List[float]]], None]] = None,
 ) -> Dict[str, List[float]]:
     q_net.train()
     target_net.load_state_dict(q_net.state_dict())
@@ -131,6 +131,7 @@ def train_dqn(
             and (episode_idx + 1) % log_every == 0
         ):
             log_callback(
+                episode_idx + 1,
                 {
                     "episode_returns": episode_returns,
                     "episode_lengths": episode_lengths,

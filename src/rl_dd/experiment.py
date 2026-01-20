@@ -4,7 +4,7 @@ import argparse
 import csv
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -137,6 +137,19 @@ def save_csv(path: Path, rows: List[Dict[str, object]]) -> None:
     with path.open("w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
         writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+
+
+def append_csv(path: Path, rows: List[Dict[str, object]]) -> None:
+    if not rows:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    write_header = not path.exists()
+    with path.open("a", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
+        if write_header:
+            writer.writeheader()
         for row in rows:
             writer.writerow(row)
 
@@ -356,6 +369,108 @@ def save_videos(
         save_gif(frames, run_dir / f"seed{seed}.gif", fps)
 
 
+def append_periodic_eval(
+    env: GridWorldEnv,
+    model: torch.nn.Module,
+    algo: str,
+    train_seeds: List[int],
+    test_seeds: List[int],
+    episodes_per_seed: int,
+    device: torch.device,
+    run_dir: Path,
+    episode: int,
+    run_meta: Dict[str, float],
+    max_steps: int,
+    fim_samples: int,
+    fim_hutchinson: int,
+    rng_seed: int,
+) -> Optional[Dict[str, object]]:
+    if not test_seeds or not train_seeds:
+        return None
+    if algo == "trpo":
+        train_return = evaluate_policy_trpo(
+            env,
+            model,
+            train_seeds,
+            episodes_per_seed=episodes_per_seed,
+            device=device,
+        )
+        test_return = evaluate_policy_trpo(
+            env,
+            model,
+            test_seeds,
+            episodes_per_seed=episodes_per_seed,
+            device=device,
+        )
+    else:
+        train_return = evaluate_policy(
+            env,
+            model,
+            train_seeds,
+            episodes_per_seed=episodes_per_seed,
+            device=device,
+        )
+        test_return = evaluate_policy(
+            env,
+            model,
+            test_seeds,
+            episodes_per_seed=episodes_per_seed,
+            device=device,
+        )
+    fim_rng = np.random.default_rng(rng_seed)
+    fim_trace = estimate_fim_trace(
+        env,
+        model,
+        train_seeds,
+        device,
+        max_steps,
+        fim_samples,
+        fim_hutchinson,
+        fim_rng,
+    )
+    row: Dict[str, object] = {
+        "episode": int(episode),
+        "train_return": float(train_return),
+        "test_return": float(test_return),
+        "fim_trace": float(fim_trace),
+        "algo": str(algo),
+    }
+    row.update(run_meta)
+    append_csv(run_dir / "periodic_eval.csv", [row])
+    return row
+
+
+def plot_periodic_eval(rows: List[Dict[str, object]], path: Path) -> None:
+    if not rows:
+        return
+    import matplotlib.pyplot as plt
+
+    episodes = [int(row["episode"]) for row in rows]
+    train_returns = [float(row["train_return"]) for row in rows]
+    test_returns = [float(row["test_return"]) for row in rows]
+    fim_traces = [float(row["fim_trace"]) for row in rows]
+
+    fig, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+    ax_ret, ax_fim = axes
+
+    ax_ret.plot(episodes, train_returns, label="train", marker="o")
+    ax_ret.plot(episodes, test_returns, label="test", marker="o")
+    ax_ret.set_ylabel("Return")
+    ax_ret.set_title("Periodic eval return")
+    ax_ret.legend()
+
+    ax_fim.plot(episodes, fim_traces, label="fim_trace", marker="o", color="tab:green")
+    ax_fim.set_xlabel("Episode")
+    ax_fim.set_ylabel("FIM trace")
+    ax_fim.set_title("FIM trace vs episode")
+    ax_fim.legend()
+
+    fig.tight_layout()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(path, dpi=150)
+    plt.close()
+
+
 def run_sanity_check(args: argparse.Namespace) -> None:
     device = torch.device("cpu")
     train_seeds = [0]
@@ -515,13 +630,15 @@ def run_experiment(
 
                 run_dir = log_root / f"w{width}_d{depth}_run{run_id}"
                 run_dir.mkdir(parents=True, exist_ok=True)
+                periodic_rows: List[Dict[str, object]] = []
 
                 episode_progress = tqdm(
                     total=args.episodes,
                     desc=f"episodes w{width} d{depth} run{run_id}",
                     leave=False,
                 )
-                write_run_logs = None
+                finalize_run_logs = None
+                periodic_log_callback = None
                 try:
                     if args.algo == "trpo":
                         trpo_config = TRPOConfig(
@@ -553,7 +670,9 @@ def run_experiment(
                             "num_params": num_params,
                         }
 
-                        def write_run_logs(train_info: Dict[str, List[float]]) -> None:
+                        def finalize_run_logs(
+                            train_info: Dict[str, List[float]]
+                        ) -> None:
                             save_episode_metrics(
                                 train_info["episode_returns"],
                                 train_info["episode_lengths"],
@@ -580,6 +699,32 @@ def run_experiment(
                                 args.video_fps,
                             )
 
+                        def periodic_log_callback(
+                            episode_count: int, train_info: Dict[str, List[float]]
+                        ) -> None:
+                            finalize_run_logs(train_info)
+                            row = append_periodic_eval(
+                                env,
+                                model_for_eval,
+                                args.algo,
+                                train_seeds,
+                                test_seeds,
+                                args.eval_episodes,
+                                device,
+                                run_dir,
+                                episode_count,
+                                run_meta,
+                                args.max_steps,
+                                args.fim_samples,
+                                args.fim_hutchinson,
+                                run_seed + episode_count,
+                            )
+                            if row is not None:
+                                periodic_rows.append(row)
+                                plot_periodic_eval(
+                                    periodic_rows, run_dir / "periodic_eval.png"
+                                )
+
                         train_info = train_trpo(
                             env,
                             policy_net,
@@ -590,7 +735,9 @@ def run_experiment(
                             rng,
                             progress=episode_progress,
                             log_every=args.log_every,
-                            log_callback=write_run_logs if args.log_every > 0 else None,
+                            log_callback=periodic_log_callback
+                            if args.log_every > 0
+                            else None,
                         )
                     else:
                         q_net = build_network(obs_dim, action_dim, hidden_sizes, device)
@@ -610,7 +757,9 @@ def run_experiment(
                             "num_params": num_params,
                         }
 
-                        def write_run_logs(train_info: Dict[str, List[float]]) -> None:
+                        def finalize_run_logs(
+                            train_info: Dict[str, List[float]]
+                        ) -> None:
                             save_episode_metrics(
                                 train_info["episode_returns"],
                                 train_info["episode_lengths"],
@@ -632,6 +781,32 @@ def run_experiment(
                                 args.video_fps,
                             )
 
+                        def periodic_log_callback(
+                            episode_count: int, train_info: Dict[str, List[float]]
+                        ) -> None:
+                            finalize_run_logs(train_info)
+                            row = append_periodic_eval(
+                                env,
+                                model_for_eval,
+                                args.algo,
+                                train_seeds,
+                                test_seeds,
+                                args.eval_episodes,
+                                device,
+                                run_dir,
+                                episode_count,
+                                run_meta,
+                                args.max_steps,
+                                args.fim_samples,
+                                args.fim_hutchinson,
+                                run_seed + episode_count,
+                            )
+                            if row is not None:
+                                periodic_rows.append(row)
+                                plot_periodic_eval(
+                                    periodic_rows, run_dir / "periodic_eval.png"
+                                )
+
                         train_info = train_dqn(
                             env,
                             q_net,
@@ -644,12 +819,14 @@ def run_experiment(
                             rng,
                             progress=episode_progress,
                             log_every=args.log_every,
-                            log_callback=write_run_logs if args.log_every > 0 else None,
+                            log_callback=periodic_log_callback
+                            if args.log_every > 0
+                            else None,
                         )
                 finally:
                     episode_progress.close()
-                if write_run_logs is not None:
-                    write_run_logs(train_info)
+                if finalize_run_logs is not None:
+                    finalize_run_logs(train_info)
                 if args.save_model:
                     if args.algo == "trpo":
                         save_model_state(policy_net, run_dir / "policy.pt")

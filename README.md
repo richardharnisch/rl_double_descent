@@ -105,7 +105,7 @@ Logging and plots
 - `--log-x` / `--no-log-x` (default: log-x enabled): Use or disable log scale on the x-axis for plots.
 - `--log-dir` (default: `results/<timestamp>`): Base directory for all logs. Each run writes to its own subdirectory.
 - `--collect-only` (default: disabled): Skip training and compile `metrics.csv`, `summary.csv`, and `curve.png` from existing run directories.
-- `--log-every` (default: `0`): Save `episodes.csv`/`episodes.png`, `trpo_updates.csv` (TRPO), and configured GIFs every N episodes by overwriting the current files; set `0` to disable.
+- `--log-every` (default: `0`): Save `episodes.csv`/`episodes.png`, `trpo_updates.csv` (TRPO), and configured GIFs every N episodes by overwriting the current files; also appends train/test evals plus FIM trace to `periodic_eval.csv` and updates `periodic_eval.png`; set `0` to disable.
 - `--save-model` / `--no-save-model` (default: save model enabled): Enable or disable writing `.pt` model checkpoints.
 
 Videos
