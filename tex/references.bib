@@ -1,0 +1,149 @@
+% discusses double descent in RL with inference threshold
+@article{brellmann2024doubledescentreinforcementlearning,
+  title         = {On Double Descent in Reinforcement Learning with LSTD and Random Features},
+  author        = {David Brellmann and Eloïse Berthier and David Filliat and Goran Frehse},
+  year          = {2024},
+  eprint        = {2310.05518},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG},
+  url           = {https://arxiv.org/abs/2310.05518}
+}
+
+% introduces minigrid and miniworld modular environments
+@article{chevalierboisvert2023minigridminiworldmodular,
+  title         = {Minigrid & Miniworld: Modular & Customizable Reinforcement Learning Environments for Goal-Oriented Tasks},
+  author        = {Maxime Chevalier-Boisvert and Bolun Dai and Mark Towers and Rodrigo de Lazcano and Lucas Willems and Salem Lahlou and Suman Pal and Pablo Samuel Castro and Jordan Terry},
+  year          = {2023},
+  eprint        = {2306.13831},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG},
+  url           = {https://arxiv.org/abs/2306.13831}
+}
+
+% introduces procgen benchmark
+@article{cobbe2020leveragingproceduralgenerationbenchmark,
+  title         = {Leveraging Procedural Generation to Benchmark Reinforcement Learning},
+  author        = {Karl Cobbe and Christopher Hesse and Jacob Hilton and John Schulman},
+  year          = {2020},
+  eprint        = {1912.01588},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG},
+  url           = {https://arxiv.org/abs/1912.01588}
+}
+
+% introduces coinrun as RL generalization benchmark
+@article{cobbe2019quantifyinggeneralizationreinforcementlearning,
+  title         = {Quantifying Generalization in Reinforcement Learning},
+  author        = {Karl Cobbe and Oleg Klimov and Chris Hesse and Taehoon Kim and John Schulman},
+  year          = {2019},
+  eprint        = {1812.02341},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG},
+  url           = {https://arxiv.org/abs/1812.02341}
+}
+
+% introduces "double descent" phenomenon
+@article{doi:10.1073/pnas.1903070116,
+  author   = {Mikhail Belkin  and Daniel Hsu  and Siyuan Ma  and Soumik Mandal },
+  title    = {Reconciling modern machine-learning practice and the classical bias–variance trade-off},
+  journal  = {Proceedings of the National Academy of Sciences},
+  volume   = {116},
+  number   = {32},
+  pages    = {15849-15854},
+  year     = {2019},
+  doi      = {10.1073/pnas.1903070116},
+  url      = {https://www.pnas.org/doi/abs/10.1073/pnas.1903070116},
+  eprint   = {https://www.pnas.org/doi/pdf/10.1073/pnas.1903070116},
+  abstract = {While breakthroughs in machine learning and artificial intelligence are changing society, our fundamental understanding has lagged behind. It is traditionally believed that fitting models to the training data exactly is to be avoided as it leads to poor performance on unseen data. However, powerful modern classifiers frequently have near-perfect fit in training, a disconnect that spurred recent intensive research and controversy on whether theory provides practical insights. In this work, we show how classical theory and modern practice can be reconciled within a single unified performance curve and propose a mechanism underlying its emergence. We believe this previously unknown pattern connecting the structure and performance of learning architectures will help shape design and understanding of learning algorithms. Breakthroughs in machine learning are rapidly changing science and society, yet our fundamental understanding of this technology has lagged far behind. Indeed, one of the central tenets of the field, the bias–variance trade-off, appears to be at odds with the observed behavior of methods used in modern machine-learning practice. The bias–variance trade-off implies that a model should balance underfitting and overfitting: Rich enough to express underlying structure in data and simple enough to avoid fitting spurious patterns. However, in modern practice, very rich models such as neural networks are trained to exactly fit (i.e., interpolate) the data. Classically, such models would be considered overfitted, and yet they often obtain high accuracy on test data. This apparent contradiction has raised questions about the mathematical foundations of machine learning and their relevance to practitioners. In this paper, we reconcile the classical understanding and the modern practice within a unified performance curve. This “double-descent” curve subsumes the textbook U-shaped bias–variance trade-off curve by showing how increasing model capacity beyond the point of interpolation results in improved performance. We provide evidence for the existence and ubiquity of double descent for a wide spectrum of models and datasets, and we posit a mechanism for its emergence. This connection between the performance and the structure of machine-learning models delineates the limits of classical analyses and has implications for both the theory and the practice of machine learning.}
+}
+
+
+% implements sonic games as a gym environment to test generalization in RL
+@article{nichol2018gottalearnfastnew,
+  title         = {Gotta Learn Fast: A New Benchmark for Generalization in RL},
+  author        = {Alex Nichol and Vicki Pfau and Christopher Hesse and Oleg Klimov and John Schulman},
+  year          = {2018},
+  eprint        = {1804.03720},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG},
+  url           = {https://arxiv.org/abs/1804.03720}
+}
+
+% introduces rainbow DQN, a combination of several DQN improvements
+@article{hessel2017rainbowcombiningimprovementsdeep,
+  title         = {Rainbow: Combining Improvements in Deep Reinforcement Learning},
+  author        = {Matteo Hessel and Joseph Modayil and Hado van Hasselt and Tom Schaul and Georg Ostrovski and Will Dabney and Dan Horgan and Bilal Piot and Mohammad Azar and David Silver},
+  year          = {2017},
+  eprint        = {1710.02298},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.AI},
+  url           = {https://arxiv.org/abs/1710.02298}
+}
+
+% original DQN paper
+@article{Mnih2015,
+  author   = {Volodymyr Mnih and Koray Kavukcuoglu and David Silver and Andrei A. Rusu and Joel Veness and Marc G. Bellemare and Alex Graves and Martin Riedmiller and Andreas K. Fidjeland and Georg Ostrovski and Stig Petersen and Charles Beattie and Amir Sadik and Ioannis Antonoglou and Helen King and Dharshan Kumaran and Daan Wierstra and Shane Legg and Demis Hassabis},
+  title    = {Human-level control through deep reinforcement learning},
+  journal  = {Nature},
+  year     = {2015},
+  volume   = {518},
+  number   = {7540},
+  pages    = {529--533},
+  doi      = {10.1038/nature14236},
+  url      = {https://doi.org/10.1038/nature14236},
+  issn     = {1476-4687},
+  abstract = {An artificial agent is developed that learns to play a diverse range of classic Atari 2600 computer games directly from sensory experience, achieving a performance comparable to that of an expert human player; this work paves the way to building general-purpose learning algorithms that bridge the divide between perception and action.}
+}
+
+% DD visualization for presentation
+@article{PhysRevResearch.4.013201,
+  title     = {Memorizing without overfitting: Bias, variance, and interpolation in overparameterized models},
+  author    = {Rocks, Jason W. and Mehta, Pankaj},
+  journal   = {Phys. Rev. Res.},
+  volume    = {4},
+  issue     = {1},
+  pages     = {013201},
+  numpages  = {19},
+  year      = {2022},
+  month     = {Mar},
+  publisher = {American Physical Society},
+  doi       = {10.1103/PhysRevResearch.4.013201},
+  url       = {https://link.aps.org/doi/10.1103/PhysRevResearch.4.013201}
+}
+
+% paper showing DD occurs in large neural networks
+@misc{nakkiran2019deepdoubledescentbigger,
+  title         = {Deep Double Descent: Where Bigger Models and More Data Hurt},
+  author        = {Preetum Nakkiran and Gal Kaplun and Yamini Bansal and Tristan Yang and Boaz Barak and Ilya Sutskever},
+  year          = {2019},
+  eprint        = {1912.02292},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG},
+  url           = {https://arxiv.org/abs/1912.02292}
+}
+
+% plots for dd
+@article{Belkin_2019,
+  title     = {Reconciling modern machine-learning practice and the classical bias–variance trade-off},
+  volume    = {116},
+  issn      = {1091-6490},
+  url       = {http://dx.doi.org/10.1073/pnas.1903070116},
+  doi       = {10.1073/pnas.1903070116},
+  number    = {32},
+  journal   = {Proceedings of the National Academy of Sciences},
+  publisher = {Proceedings of the National Academy of Sciences},
+  author    = {Belkin, Mikhail and Hsu, Daniel and Ma, Siyuan and Mandal, Soumik},
+  year      = {2019},
+  month     = jul,
+  pages     = {15849–15854}
+}
+
+@misc{veselý2025presencedoubledescentdeepreinforcement,
+  title         = {On The Presence of Double-Descent in Deep Reinforcement Learning},
+  author        = {Viktor Veselý and Aleksandar Todorov and Matthia Sabatelli},
+  year          = {2025},
+  eprint        = {2511.06895},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG},
+  url           = {https://arxiv.org/abs/2511.06895}
+}

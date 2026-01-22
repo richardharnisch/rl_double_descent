@@ -3,6 +3,8 @@
 \title{On the Existence of Double-Descent in Reinforcement Learning}
 \author{Richard Harnisch}
 \date{27 January 2026}
+\usepackage[backend=biber,style=authoryear]{biblatex}
+\addbibresource{references.bib}
 
 \begin{document}
 
@@ -14,41 +16,186 @@
     \tableofcontents
 \end{frame}
 
-
-% - Show results, unfortunately it doesn't show up
-
-\section{Introduction}
+\section{Double Descent Background}
 \begin{frame}{What is Double Descent?}
     % Describe phenomenon of DD in SL and the paradox
+    \begin{itemize}
+        \item \textbf{Double Descent (DD)} is a phenomenon of models recovering generalization capacity after surpassing the interpolation threshold \parencite{nakkiran2019deepdoubledescentbigger}.
+        \item Classically, increasing model capacity leads to a U-shaped risk curve.
+        \item However, modern machine learning models often operate in regimes where they can perfectly fit (interpolate) the training data.
+        \item This can occur in both model size and training time regimens as well as multiple problem types in supervised learning. \parencite{Belkin_2019, nakkiran2019deepdoubledescentbigger}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Classical U-shaped Risk Curve}
+    \begin{figure}
+        \centering
+        \includegraphics[height=0.5\textheight]{images/u-shaped.pdf}
+        \caption{Classical U-shaped risk curve arising from the bias-variance trade-off. \textcite{Belkin_2019}.}
+        \label{fig:u-shaped}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Double Descent Risk Curve}
+    % Double Descent risk curve, including U-shaped risk curve (the ``classical'' regime) together with the observed behavior from using high capacity function classes (the ``modern'' interpolating regime), separated by the interpolation threshold. Predictors to the right of the interpolation threshold have zero training risk.
+    \begin{figure}
+        \centering
+        \includegraphics[height=0.4\textheight]{images/doubledescent.pdf}
+        \caption{\textcite{Belkin_2019}.}
+        \label{fig:double-descent}
+    \end{figure}
 \end{frame}
 
 \begin{frame}{DD in Reinforcement Learning}
+    \begin{itemize}
+        \item Double Descent has not been studied much in Reinforcement Learning (RL) settings.
+        \item There is some research on theoretical aspects of overparameterization in RL with regard to visited states \parencite{brellmann2024doubledescentreinforcementlearning}.
+        \item There is also an approach of using information theoretic metrics to analyze generalization in RL \parencite{veselý2025presencedoubledescentdeepreinforcement}.
+    \end{itemize}
     % has not been studied much in RL...
 \end{frame}
 
-\section{Methods}
+\section{Experimental Setup}
 \begin{frame}{Methods}
+    \begin{itemize}
+        \item We are trying to emulate the supervised learning setup in RL: Train/test split, and plotting a ``risk'' curve.
+        \item To mimick train and test sets, we use a family of seeded randomly generated maps, training on a subset of these maps and testing on a disjoint subset.
+    \end{itemize}
+
+    \begin{figure}
+        \centering
+        \begin{minipage}{0.32\textwidth}
+            \fbox{\includegraphics[width=\linewidth]{images/env1.png}}
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.32\textwidth}
+            \fbox{\includegraphics[width=\linewidth]{images/env2.png}}
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.32\textwidth}
+            \fbox{\includegraphics[width=\linewidth]{images/env3.png}}
+        \end{minipage}
+        \caption{Examples of randomly generated training and validation environments, with agent (blue) and goal (green) tiles.}
+        \label{fig:env-examples}
+    \end{figure}
     % - Move to methods
     % - Explain that to mimick SL we need training and validation maps, need something to plot on the y axis of these plots because we dont have the loss
     % Explain FIM, RL setup, environments, agents, training/validation maps
 \end{frame}
 
+\begin{frame}{Metrics}
+    \begin{itemize}
+        \item To plot risk curves, we need something to plot on the y-axis since we don't have a loss function in RL.
+        \item We use the \textbf{average return} over the test maps as our metric.
+        \item Further, we compute the trace of the \textbf{Fisher Information Matrix (FIM)} of the policy network.
+        \item The FIM is defined as:
+              \begin{equation*}
+                  F = \mathbb{E}_{\tau \sim \pi_\theta} \left[ \nabla_\theta \log \pi_\theta(\tau) \nabla_\theta \log \pi_\theta(\tau)^T \right]
+              \end{equation*}
+              where $\tau$ is a trajectory sampled from the policy $\pi_\theta$.
+        \item The trace of the FIM gives a measure of the sensitivity of the policy to parameter changes, which can be related to generalization.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Agents \& Training Setup}
+    \begin{itemize}
+        \item We train two agent types: A DQN agent and a TRPO agent, both using feedforward neural networks.
+        \item We vary the model capacity by changing the depth and width of the networks.
+        \item Training is performed on a fixed set of training maps, with evaluation held-out test maps.
+        \item We record the average return and trace of the FIM at various points during training to analyze the presence of Double Descent.
+    \end{itemize}
+\end{frame}
+
 \section{Results \& Discussion}
-\begin{frame}{Results}
-    % Results, unfortunately it doesn't show up
+\begin{frame}{Results in Parametric Regime}
+    \begin{figure}
+        \centering
+        \includegraphics[height=0.8\textheight]{images/results_capacity.png}
+        \caption{Results from TRPO agents trained on 100 maps for 50k episodes.}
+        \label{fig:results-example}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Results in Episodic Regime}
+    \begin{figure}
+        \centering
+        \includegraphics[height=0.8\textheight]{images/episodes_capacity.png}
+        \caption{Results of a TRPO agent trained on 100 maps for 1.8M episodes.}
+        \label{fig:episodes-example}
+    \end{figure}
 \end{frame}
 
 \begin{frame}{Discussion}
+    \begin{itemize}
+        \item Unfortunately, we are unable to observe a clear Double Descent phenomenon in our experiments.
+        \item There may be several reasons for this, including the complexity of reinforcement learning environments and the computational constraints limiting the scale of our experiments.
+        \item We observe a spike in the FIM trace around the interpolation threshold. This indicates that the model is unstable in the parameter space, but stabilizes later.
+        \item However, this does not translate to a clear second ascent in average return.
+    \end{itemize}
     % Discussion
 \end{frame}
 
+\section{Limitations \& Future Work}
 \begin{frame}{Limitations \& Future Work}
-    % Limitations & Future Work
+    \begin{itemize}
+        \item We are constrained by limited access to compute, with training runs taking multiple days and wait times for available GPUs.
+        \item One avenue for further work is exploring the transition between lacking generalization and perfect generalization.
+        \item We observe no emerging generalization gap when training on 1,000 maps.
+        \item Further, training on larger maps as well as different algorithms could be explored, as well as stochastic transitions.
+    \end{itemize}
 \end{frame}
 
-\section{Conclusion}
-\begin{frame}{Conclusion}
-    % Conclusion
+\section{Questions}
+\begin{frame}[allowframebreaks]{References}
+    \printbibliography
+\end{frame}
+
+\begin{frame}{Thank You!}
+    \begin{center}
+        Questions?
+    \end{center}
+\end{frame}
+
+\begin{frame}{Environment Details}
+    \begin{itemize}
+        \item Each map is $8\times 8$ tiles, with the agent in the top left and the goal in the bottom right unless randomized.
+        \item Every other tile has a 20\% chance of being blocked, with a guaranteed path.
+        \item At each timestep, the agent receives a reward given by:
+              \begin{equation*}
+                  r_t =
+                  \begin{cases}
+                      1,                                & \text{if goal reached at time } t \\
+                      \Phi(s_{t+1}) - \Phi(s_t) - 0.01, & \text{otherwise}
+                  \end{cases}
+              \end{equation*}
+              where $\Phi(s) = \frac{\text{Euclidean distance to goal}}{100}$ is the potential function.
+        \item Episodes are truncated at 64 timesteps.
+        \item Action space: {up, right, down, left}, deterministic transitions.
+        \item Observation space: $8\times 8$ grid with one-hot encoded tiles, frame stacking of 2 frames ($8\times 8\times 4\times 2 = 512$ bits).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Training Configurations}
+    \begin{itemize}
+        \item On the following configurations, we trained agents of varying widths between 3 and 8 and depths between 4 and 1024:
+              \begin{tabular}{l|c|c|l}
+                  Type & Train Maps & Training Episodes & Start \& Goal Position                                            \\
+                  \hline
+                  TRPO & 10         & 10,000            & Standard\footnote{Agent starts in top left, goal in bottom right} \\
+                  DQN  & 50         & 20,000            & Standard                                                          \\
+                  DQN  & 100        & 50,000            & Standard                                                          \\
+                  TRPO & 50         & 20,000            & Randomized                                                        \\
+                  TRPO & 100        & 50,000            & Randomized                                                        \\
+                  TRPO & 500        & 1,000,000         & Standard                                                          \\
+              \end{tabular}
+        \item On the following configurations, we trained agents of depth 3 and widths 4, 16, 64, 256, and 1024 for unlimited time:
+              \begin{tabular}{l|c|l}
+                  Type & Train Maps & Start \& Goal Position \\
+                  \hline
+                  TRPO & 50         & Standard               \\
+                  TRPO & 100        & Standard               \\
+              \end{tabular}
+    \end{itemize}
 \end{frame}
 
 \end{document}
