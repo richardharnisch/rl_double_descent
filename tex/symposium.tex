@@ -4,7 +4,7 @@
 \author{Richard Harnisch}
 \date{27 January 2026}
 \usepackage[backend=biber,style=authoryear]{biblatex}
-\addbibresource{references.bib}
+\addbibresource{main.bib}
 
 \begin{document}
 
@@ -41,7 +41,7 @@
     \begin{figure}
         \centering
         \includegraphics[height=0.4\textheight]{images/doubledescent.pdf}
-        \caption{\textcite{Belkin_2019}.}
+        \caption{Double Descent risk curve exhibiting a second descent \textcite{Belkin_2019}.}
         \label{fig:double-descent}
     \end{figure}
 \end{frame}
@@ -90,16 +90,16 @@
         \item Further, we compute the trace of the \textbf{Fisher Information Matrix (FIM)} of the policy network.
         \item The FIM is defined as:
               \begin{equation*}
-                  F = \mathbb{E}_{\tau \sim \pi_\theta} \left[ \nabla_\theta \log \pi_\theta(\tau) \nabla_\theta \log \pi_\theta(\tau)^T \right]
+                  F = \mathbb{E}_{a, s \sim \pi_\theta} \left[ \nabla_\theta \log \pi_\theta(a|s) \nabla_\theta \log \pi_\theta(a|s)^T \right]
               \end{equation*}
-              where $\tau$ is a trajectory sampled from the policy $\pi_\theta$.
+              where $s, a$ are sampled from trajectories under the policy $\pi_\theta$, collected on the training maps.
         \item The trace of the FIM gives a measure of the sensitivity of the policy to parameter changes, which can be related to generalization.
     \end{itemize}
 \end{frame}
 
 \begin{frame}{Agents \& Training Setup}
     \begin{itemize}
-        \item We train two agent types: A DQN agent and a TRPO agent, both using feedforward neural networks.
+        \item We train two agent types: A DQN \parencite{mnih2013playingatarideepreinforcement} agent and a TRPO agent \parencite{schulman2017trustregionpolicyoptimization}, both using feedforward neural networks.
         \item We vary the model capacity by changing the depth and width of the networks.
         \item Training is performed on a fixed set of training maps, with evaluation held-out test maps.
         \item We record the average return and trace of the FIM at various points during training to analyze the presence of Double Descent.
@@ -195,6 +195,38 @@
                   TRPO & 50         & Standard               \\
                   TRPO & 100        & Standard               \\
               \end{tabular}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{The Fisher Information Matrix}
+    \begin{itemize}
+        \item The \textbf{Fisher Information Matrix} (FIM) is defined as:
+              \begin{equation*}
+                  F = \mathbb{E}_{a, s \sim \pi_\theta} \left[ \nabla_\theta \log \pi_\theta(a|s) \nabla_\theta \log \pi_\theta(a|s)^T \right]
+              \end{equation*}
+        \item $s, a$ are sampled from trajectories under the policy $\pi_\theta$, collected on the training maps.
+        \item $\theta$ are the policy parameters
+        \item $\nabla_\theta \log \pi_\theta(a|s)$ is the gradient of the log-probability of the action given the state with respect to the policy parameters
+        \item A FIM where $\theta = [\theta_1, \theta_2]^T$ is therefore a $2\times 2$ matrix given by
+    \end{itemize}
+    \begin{equation*}
+        \mathbb{E}
+        \begin{bmatrix}
+            \left( \frac{\partial}{\partial \theta_1} \log \pi_\theta(a|s) \right)^2                                        & \frac{\partial}{\partial \theta_1} \log \pi_\theta(a|s) \frac{\partial}{\partial \theta_2} \log \pi_\theta(a|s) \\
+            \frac{\partial}{\partial \theta_2} \log \pi_\theta(a|s) \frac{\partial}{\partial \theta_1} \log \pi_\theta(a|s) & \left( \frac{\partial}{\partial \theta_2} \log \pi_\theta(a|s) \right)^2
+        \end{bmatrix}
+    \end{equation*}
+\end{frame}
+
+\begin{frame}{Computing the FIM's Trace}
+    \begin{itemize}
+        \item We use Hutchinson's estimator for the trace to avoid forming the full FIM \parencite{hutchinson}:
+              \begin{equation*}
+                  \text{trace}(F) = \mathbb{E}[k^T F k]
+              \end{equation*}
+              where $k$ is a vector with entries sampled from a Rademacher distribution $\{-1, 1\}$.
+        \item Fisher vector products are implemented as part of the TRPO algorithm, so we can compute $F k$ without forming $F$ explicitly.
+        \item Our implementation samples 50 state-action pairs and 4 random vectors $k$ per pair to compute an empirical estimate of the trace, for 200 total samples.
     \end{itemize}
 \end{frame}
 
