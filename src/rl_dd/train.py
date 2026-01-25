@@ -191,16 +191,6 @@ def make_optimizer(model: nn.Module, config: TrainConfig) -> torch.optim.Optimiz
     return torch.optim.Adam(model.parameters(), lr=config.lr)
 
 
-def _flatten_grads(params: Iterable[nn.Parameter]) -> torch.Tensor:
-    grads = []
-    for param in params:
-        if param.grad is None:
-            grads.append(torch.zeros_like(param).reshape(-1))
-        else:
-            grads.append(param.grad.detach().reshape(-1))
-    return torch.cat(grads)
-
-
 def estimate_fim_trace(
     env,
     q_net: QNetwork,
@@ -208,10 +198,9 @@ def estimate_fim_trace(
     device: torch.device,
     max_steps: int,
     sample_count: int,
-    hutchinson_samples: int,
     rng: np.random.Generator,
 ) -> float:
-    if sample_count <= 0 or hutchinson_samples <= 0:
+    if sample_count <= 0:
         return float("nan")
     seed_list = list(seeds)
     if not seed_list:
@@ -246,19 +235,12 @@ def estimate_fim_trace(
 
             q_net.zero_grad(set_to_none=True)
             log_prob.backward()
-            grads = _flatten_grads(params)
-
-            for _ in range(hutchinson_samples):
-                z = torch.randint(
-                    0,
-                    2,
-                    (num_params,),
-                    generator=torch_rng,
-                    device=device,
-                    dtype=torch.int8,
-                )
-                z = (z.to(dtype=grads.dtype) * 2) - 1
-                accum += float(torch.dot(grads, z).item() ** 2)
+            grad_norm_sq = 0.0
+            for param in params:
+                if param.grad is None:
+                    continue
+                grad_norm_sq += float(param.grad.detach().pow(2).sum().item())
+            accum += grad_norm_sq
 
             state_samples += 1
             obs, _, terminated, truncated, _ = env.step(int(action))
@@ -266,4 +248,4 @@ def estimate_fim_trace(
             steps += 1
 
     q_net.train()
-    return accum / float(state_samples * hutchinson_samples)
+    return accum / float(state_samples)

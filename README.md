@@ -41,7 +41,7 @@ The top-level log directory contains:
 - `curve.png`: train/test return vs parameter count plus FIM/parameter panel.
 
 This also logs:
-- `fim_trace`: Hutchinson-estimated Fisher trace at the end of training.
+- `fim_trace`: Fisher trace estimated as the average of $\|\nabla_\theta \log \pi_\theta(a|s)\|^2$ over sampled state-action pairs.
 - Videos (GIFs) for seeds listed in `--video-seeds`, saved inside each run directory.
 - A second plot panel for `fim_trace / num_params` vs parameter count.
 
@@ -106,6 +106,7 @@ Logging and plots
 - `--log-dir` (default: `results/<timestamp>`): Base directory for all logs. Each run writes to its own subdirectory.
 - `--collect-only` (default: disabled): Skip training and compile `metrics.csv`, `summary.csv`, and `curve.png` from existing run directories.
 - `--log-every` (default: `0`): Save `episodes.csv`/`episodes.png`, `trpo_updates.csv` (TRPO), and configured GIFs every N episodes by overwriting the current files; also appends train/test evals plus FIM trace to `periodic_eval.csv` and updates `periodic_eval.png`; set `0` to disable.
+  Periodic eval rows include `episode`, `train_return`, `test_return`, `fim_trace`, and the run metadata columns.
 - `--save-model` / `--no-save-model` (default: save model enabled): Enable or disable writing `.pt` model checkpoints.
 
 Videos
@@ -115,9 +116,8 @@ Videos
 Episode curves
 Per-run episode CSVs and plots are always saved inside each run's log directory.
 
-FIM (Hutchinson)
+FIM
 - `--fim-samples` (default: `64`): Number of (state, action) samples used to estimate the Fisher trace; `0` disables FIM logging.
-- `--fim-hutchinson` (default: `4`): Number of Rademacher probe vectors per sample. More probes reduces estimator variance.
 
 Sanity check (learnability)
 - `--sanity-check` (default: disabled): Run the obstacle-free learnability check before the main experiment.
