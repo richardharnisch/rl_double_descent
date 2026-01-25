@@ -178,6 +178,7 @@ def plot_results(summary: List[Dict[str, float]], path: Path, log_x: bool) -> No
     ax_perf.errorbar(params, test_mean, yerr=test_std, label="test", marker="o")
     if log_x:
         ax_perf.set_xscale("log")
+        ax_perf.set_xlim(min(params) / 1.5, max(params) * 1.5)
     ax_perf.set_ylabel("Average return")
     ax_perf.set_title("Performance vs parameter count")
     ax_perf.legend()
@@ -214,7 +215,7 @@ def plot_results(summary: List[Dict[str, float]], path: Path, log_x: bool) -> No
 
 def collect_results(log_root: Path, log_x: bool) -> None:
     metrics_files = sorted(log_root.glob("w*_d*_run*/metrics.csv"))
-    print(f"Found {len(metrics_files)} metrics files.")
+    print(f"Found {len(metrics_files)} metrics files in {log_root}.")
     results: List[Dict[str, float]] = []
     for metrics_path in tqdm(metrics_files):
         with metrics_path.open("r", newline="") as handle:
@@ -240,10 +241,9 @@ def save_episode_metrics(
     for idx, (ret, length) in enumerate(zip(returns, lengths)):
         row = {
             "episode": idx,
-            "return": float(ret),
+            "return": round(float(ret), 4),
             "length": int(length),
         }
-        row.update(run_meta)
         rows.append(row)
     save_csv(path, rows)
 
@@ -382,7 +382,6 @@ def append_periodic_eval(
     run_meta: Dict[str, float],
     max_steps: int,
     fim_samples: int,
-    fim_hutchinson: int,
     rng_seed: int,
 ) -> Optional[Dict[str, object]]:
     if not test_seeds or not train_seeds:
@@ -425,7 +424,6 @@ def append_periodic_eval(
         device,
         max_steps,
         fim_samples,
-        fim_hutchinson,
         fim_rng,
     )
     row: Dict[str, object] = {
@@ -445,6 +443,10 @@ def plot_periodic_eval(rows: List[Dict[str, object]], path: Path) -> None:
         return
     import matplotlib.pyplot as plt
 
+    required = {"episode", "train_return", "test_return", "fim_trace"}
+    if not required.issubset(rows[0].keys()):
+        return
+
     episodes = [int(row["episode"]) for row in rows]
     train_returns = [float(row["train_return"]) for row in rows]
     test_returns = [float(row["test_return"]) for row in rows]
@@ -453,13 +455,13 @@ def plot_periodic_eval(rows: List[Dict[str, object]], path: Path) -> None:
     fig, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
     ax_ret, ax_fim = axes
 
-    ax_ret.plot(episodes, train_returns, label="train", marker="o")
-    ax_ret.plot(episodes, test_returns, label="test", marker="o")
+    ax_ret.plot(episodes, train_returns, label="train")
+    ax_ret.plot(episodes, test_returns, label="test", color="tab:orange")
     ax_ret.set_ylabel("Return")
     ax_ret.set_title("Periodic eval return")
     ax_ret.legend()
 
-    ax_fim.plot(episodes, fim_traces, label="fim_trace", marker="o", color="tab:green")
+    ax_fim.plot(episodes, fim_traces, label="fim_trace", color="tab:green")
     ax_fim.set_xlabel("Episode")
     ax_fim.set_ylabel("FIM trace")
     ax_fim.set_title("FIM trace vs episode")
@@ -671,7 +673,7 @@ def run_experiment(
                         }
 
                         def finalize_run_logs(
-                            train_info: Dict[str, List[float]]
+                            train_info: Dict[str, List[float]],
                         ) -> None:
                             save_episode_metrics(
                                 train_info["episode_returns"],
@@ -716,7 +718,6 @@ def run_experiment(
                                 run_meta,
                                 args.max_steps,
                                 args.fim_samples,
-                                args.fim_hutchinson,
                                 run_seed + episode_count,
                             )
                             if row is not None:
@@ -735,9 +736,9 @@ def run_experiment(
                             rng,
                             progress=episode_progress,
                             log_every=args.log_every,
-                            log_callback=periodic_log_callback
-                            if args.log_every > 0
-                            else None,
+                            log_callback=(
+                                periodic_log_callback if args.log_every > 0 else None
+                            ),
                         )
                     else:
                         q_net = build_network(obs_dim, action_dim, hidden_sizes, device)
@@ -758,7 +759,7 @@ def run_experiment(
                         }
 
                         def finalize_run_logs(
-                            train_info: Dict[str, List[float]]
+                            train_info: Dict[str, List[float]],
                         ) -> None:
                             save_episode_metrics(
                                 train_info["episode_returns"],
@@ -798,7 +799,6 @@ def run_experiment(
                                 run_meta,
                                 args.max_steps,
                                 args.fim_samples,
-                                args.fim_hutchinson,
                                 run_seed + episode_count,
                             )
                             if row is not None:
@@ -819,9 +819,9 @@ def run_experiment(
                             rng,
                             progress=episode_progress,
                             log_every=args.log_every,
-                            log_callback=periodic_log_callback
-                            if args.log_every > 0
-                            else None,
+                            log_callback=(
+                                periodic_log_callback if args.log_every > 0 else None
+                            ),
                         )
                 finally:
                     episode_progress.close()
@@ -872,7 +872,6 @@ def run_experiment(
                     device,
                     args.max_steps,
                     args.fim_samples,
-                    args.fim_hutchinson,
                     rng,
                 )
 
@@ -945,12 +944,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--log-dir", default=None)
     parser.add_argument("--collect-only", action="store_true", default=False)
     parser.add_argument("--log-every", type=int, default=0)
-    parser.add_argument("--save-model", dest="save_model", action="store_true", default=True)
+    parser.add_argument(
+        "--save-model", dest="save_model", action="store_true", default=True
+    )
     parser.add_argument("--no-save-model", dest="save_model", action="store_false")
     parser.add_argument("--video-seeds", default="")
     parser.add_argument("--video-fps", type=int, default=6)
     parser.add_argument("--fim-samples", type=int, default=64)
-    parser.add_argument("--fim-hutchinson", type=int, default=4)
     parser.add_argument("--sanity-check", action="store_true", default=False)
     parser.add_argument("--sanity-only", action="store_true", default=False)
     parser.add_argument("--sanity-episodes", type=int, default=800)
