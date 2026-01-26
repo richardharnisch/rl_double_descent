@@ -23,7 +23,7 @@
         \item \textbf{Double Descent (DD)} is a phenomenon of models recovering generalization capacity after surpassing the interpolation threshold \parencite{nakkiran2019deepdoubledescentbigger}.
         \item Classically, increasing model capacity leads to a U-shaped risk curve.
         \item However, modern machine learning models often operate in regimes where they can perfectly fit (interpolate) the training data.
-        \item This can occur in both model size and training time regimens as well as multiple problem types in supervised learning. \parencite{Belkin_2019, nakkiran2019deepdoubledescentbigger}
+        \item This can occur in both model size and training time regimens as well as multiple problem types in supervised learning \parencite{Belkin_2019, nakkiran2019deepdoubledescentbigger}.
     \end{itemize}
 \end{frame}
 
@@ -41,7 +41,7 @@
     \begin{figure}
         \centering
         \includegraphics[height=0.4\textheight]{images/doubledescent.pdf}
-        \caption{Double Descent risk curve exhibiting a second descent \textcite{Belkin_2019}.}
+        \caption{Double Descent risk curve exhibiting a second descent. \textcite{Belkin_2019}.}
         \label{fig:double-descent}
     \end{figure}
 \end{frame}
@@ -93,6 +93,7 @@
                   F = \mathbb{E}_{a, s \sim \pi_\theta} \left[ \nabla_\theta \log \pi_\theta(a|s) \nabla_\theta \log \pi_\theta(a|s)^T \right]
               \end{equation*}
               where $s, a$ are sampled from trajectories under the policy $\pi_\theta$, collected on the training maps.
+        \item Thus the FIM is the expected outer product of the score function (the gradient of the log-likelihood).
         \item The trace of the FIM gives a measure of the sensitivity of the policy to parameter changes, which can be related to generalization.
     \end{itemize}
 \end{frame}
@@ -100,6 +101,8 @@
 \begin{frame}{Agents \& Training Setup}
     \begin{itemize}
         \item We train two agent types: A DQN \parencite{mnih2013playingatarideepreinforcement} agent and a TRPO agent \parencite{schulman2017trustregionpolicyoptimization}, both using feedforward neural networks.
+        \item DQNs implement Q-learning with experience replay using a neural network to estimate Q-values.
+        \item TRPO is a policy gradient method that optimizes the policy directly while constraining updates using a trust region defined by the KL divergence.
         \item We vary the model capacity by changing the depth and width of the networks.
         \item Training is performed on a fixed set of training maps, with evaluation held-out test maps.
         \item We record the average return and trace of the FIM at various points during training to analyze the presence of Double Descent.
@@ -202,10 +205,9 @@
     \begin{itemize}
         \item The \textbf{Fisher Information Matrix} (FIM) is defined as:
               \begin{equation*}
-                  F = \mathbb{E}_{a, s \sim \pi_\theta} \left[ \nabla_\theta \log \pi_\theta(a|s) \nabla_\theta \log \pi_\theta(a|s)^T \right]
+                  F(\theta) = \mathbb{E}_{a, s \sim \pi_\theta} \left[ \nabla_\theta \log \pi_\theta(a|s) \nabla_\theta \log \pi_\theta(a|s)^T \right]
               \end{equation*}
-        \item $s, a$ are sampled from trajectories under the policy $\pi_\theta$, collected on the training maps.
-        \item $\theta$ are the policy parameters
+        \item $s, a$ are sampled under the stochastic policy $\pi_\theta$ defined by parameters $\theta$.
         \item $\nabla_\theta \log \pi_\theta(a|s)$ is the gradient of the log-probability of the action given the state with respect to the policy parameters
         \item A FIM where $\theta = [\theta_1, \theta_2]^T$ is therefore a $2\times 2$ matrix given by
     \end{itemize}
@@ -220,13 +222,25 @@
 
 \begin{frame}{Computing the FIM's Trace}
     \begin{itemize}
-        \item We use Hutchinson's estimator for the trace to avoid forming the full FIM \parencite{hutchinson}:
-              \begin{equation*}
-                  \text{trace}(F) = \mathbb{E}[k^T F k]
+        \item We do not need to form the full $|\theta| \times |\theta|$ matrix!
+        \item Recall $F = \mathbb{E}_{a, s \sim \pi_\theta} \left[ \nabla_\theta \log \pi_\theta(a|s) \nabla_\theta \log \pi_\theta(a|s)^T \right]$, and let
+              $g = \nabla_\theta \log \pi_\theta(a|s)$. Then $F = \mathbb{E}[g g^T]$.
+        \item Since the trace of a matrix is the sum of its diagonal entries $\sum_i F_{ii}$, we have \begin{equation*}
+                  \operatorname{tr}(F) = \sum_i \mathbb{E}[g_i^2] = \mathbb{E}\left[\sum_i g_i^2\right] = \mathbb{E}[g^T g] = \mathbb{E}[\|g\|_2^2].
               \end{equation*}
-              where $k$ is a vector with entries sampled from a Rademacher distribution $\{-1, 1\}$.
-        \item Fisher vector products are implemented as part of the TRPO algorithm, so we can compute $F k$ without forming $F$ explicitly.
-        \item Our implementation samples 50 state-action pairs and 4 random vectors $k$ per pair to compute an empirical estimate of the trace, for 200 total samples.
+        \item We can thus form a Monte Carlo estimate of the trace of the FIM by sampling states from collected trajectories and actions from the policy in that state:
+              \begin{equation*}
+                  \operatorname{tr}(F) \approx \frac{1}{N} \sum_{i=1}^N \| \nabla_\theta \log \pi_\theta(a_i | s_i) \|_2^2
+              \end{equation*}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Algorithms: DQN and TRPO}
+    \begin{itemize}
+        \item \textbf{Deep Q-Networks (DQN)} \parencite{mnih2013playingatarideepreinforcement} are value-based and approximate the optimal action-value function $Q^*(s, a)$ using a neural network. The agent selects actions based on an $\epsilon$-greedy policy derived from the Q-values.
+        \item \textbf{Trust Region Policy Optimization (TRPO)} \parencite{schulman2017trustregionpolicyoptimization} is a policy gradient method that optimizes the policy directly.
+        \item It uses a surrogate objective function given by the expected advantage $\mathbb{E}_{s, a \sim \pi_{\theta_\text{old}}} \left[ \frac{\pi_\theta(a|s)}{\pi_{\theta_\text{old}}(a|s)} A^{\pi_{\theta_\text{old}}}(s, a) \right]$.
+        \item TRPO constrains the policy updates using a trust region defined by the Kullback-Leibler (KL) divergence to ensure stable learning by $D_{KL}(\pi_{\theta_\text{old}} || \pi_\theta) \leq \delta$ for some small $\delta$.
     \end{itemize}
 \end{frame}
 
