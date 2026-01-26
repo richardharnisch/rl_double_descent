@@ -220,6 +220,8 @@ def estimate_fim_trace(
     seed_idx = 0
 
     while state_samples < sample_count:
+        if seed_idx % len(seed_list) == 0:
+            seed_list = list(rng.permutation(seed_list))
         seed = seed_list[seed_idx % len(seed_list)]
         seed_idx += 1
         obs, _ = env.reset(seed=int(seed))

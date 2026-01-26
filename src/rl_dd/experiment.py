@@ -950,7 +950,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-save-model", dest="save_model", action="store_false")
     parser.add_argument("--video-seeds", default="")
     parser.add_argument("--video-fps", type=int, default=6)
-    parser.add_argument("--fim-samples", type=int, default=64)
+    parser.add_argument("--fim-samples", type=int, default=128)
     parser.add_argument("--sanity-check", action="store_true", default=False)
     parser.add_argument("--sanity-only", action="store_true", default=False)
     parser.add_argument("--sanity-episodes", type=int, default=800)
