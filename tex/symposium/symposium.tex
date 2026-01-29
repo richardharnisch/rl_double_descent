@@ -72,7 +72,7 @@
         \begin{minipage}{0.32\textwidth}
             \fbox{\includegraphics[width=\linewidth]{images/env3.png}}
         \end{minipage}
-        \caption{Examples of randomly generated training and validation environments, with agent (blue) and goal (green) tiles.}
+        \caption{Examples of randomly generated train and test environments, with agent (blue) and goal (green) tiles.}
         \label{fig:env-examples}
     \end{figure}
     % - Move to methods
@@ -177,7 +177,7 @@
 
 \begin{frame}{Training Configurations}
     \begin{itemize}
-        \item On the following configurations, we trained agents of varying widths between 3 and 8 and depths between 4 and 1024:
+        \item On the following configurations, we trained agents of varying depths between 3 and 8 and widths between 4 and 1024:
               \begin{tabular}{l|c|c|l}
                   Type & Train Maps & Training Episodes & Start \& Goal Position                                            \\
                   \hline
@@ -209,7 +209,7 @@
         \item A FIM where $\theta = [\theta_1, \theta_2]^T$ is therefore a $2\times 2$ matrix given by
     \end{itemize}
     \begin{equation*}
-        \mathbb{E}
+        \mathbb{E}_{a, s \sim \pi_\theta}
         \begin{bmatrix}
             \left( \frac{\partial}{\partial \theta_1} \log \pi_\theta(a|s) \right)^2                                        & \frac{\partial}{\partial \theta_1} \log \pi_\theta(a|s) \frac{\partial}{\partial \theta_2} \log \pi_\theta(a|s) \\
             \frac{\partial}{\partial \theta_2} \log \pi_\theta(a|s) \frac{\partial}{\partial \theta_1} \log \pi_\theta(a|s) & \left( \frac{\partial}{\partial \theta_2} \log \pi_\theta(a|s) \right)^2

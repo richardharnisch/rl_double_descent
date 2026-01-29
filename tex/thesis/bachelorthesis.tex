@@ -1,0 +1,48 @@
+\documentclass[10pt,a4paper,twocolumn]{article}
+\usepackage{bachelorproject}
+
+\title{\vspace{-0.5in}{\bfseries\scshape 
+    Bachelor's thesis Template - Title of project
+    } \\ 
+    \vspace{1ex} 
+    \normalsize{Bachelor's Project Thesis}\vspace{-2ex}
+}
+
+\author{
+    \normalsize{Max Punten, s1234567, m.punten@ai.rug.nl,} \\ 
+    \normalsize{Supervisors: Dr A.R. Tificial \& Prof Dr I.N. Telligence}
+}
+
+\date{\vspace{-5ex}}
+
+
+\begin{document}
+
+\twocolumn[
+  \maketitle
+  \begin{@twocolumnfalse}
+    \input{./tex/abstract.tex}
+  \end{@twocolumnfalse}
+]
+
+\thispagestyle{firststyle}
+
+\input{tex/introduction.tex}
+\input{tex/style.tex}
+\input{tex/contents.tex}
+\input{tex/layout.tex}
+\input{tex/conclusions.tex}
+
+\bibliographystyle{apacite}
+\bibliography{literature_bachelorthesis}
+
+\clearpage
+
+\begin{appendices}
+    \input{tex/appendixA.tex}
+    \newpage
+    \input{tex/appendixB.tex}
+    \newpage
+\end{appendices}
+
+\end{document}
