@@ -4,7 +4,7 @@
 \author{Richard Harnisch}
 \date{27 January 2026}
 \usepackage[backend=biber,style=authoryear]{biblatex}
-\addbibresource{main.bib}
+\addbibresource{../main.bib}
 
 \begin{document}
 
@@ -23,7 +23,7 @@
         \item Classically, increasing model capacity leads to a U-shaped risk curve:
               \begin{figure}
                   \centering
-                  \includegraphics[height=0.4\textheight]{images/u-shaped.pdf}
+                  \includegraphics[height=0.4\textheight]{../images/u-shaped.pdf}
                   \caption{Classical U-shaped risk curve arising from the bias-variance trade-off. \textcite{Belkin_2019}.}
                   \label{fig:u-shaped}
               \end{figure}
@@ -37,7 +37,7 @@
     \end{itemize}
     \begin{figure}
         \centering
-        \includegraphics[height=0.35\textheight]{images/doubledescent.pdf}
+        \includegraphics[height=0.35\textheight]{../images/doubledescent.pdf}
         \caption{Double Descent risk curve exhibiting a second descent. \textcite{Belkin_2019}.}
         \label{fig:double-descent}
     \end{figure}
@@ -62,15 +62,15 @@
     \begin{figure}
         \centering
         \begin{minipage}{0.32\textwidth}
-            \fbox{\includegraphics[width=\linewidth]{images/env1.png}}
+            \fbox{\includegraphics[width=\linewidth]{../images/env1.png}}
         \end{minipage}
         \hfill
         \begin{minipage}{0.32\textwidth}
-            \fbox{\includegraphics[width=\linewidth]{images/env2.png}}
+            \fbox{\includegraphics[width=\linewidth]{../images/env2.png}}
         \end{minipage}
         \hfill
         \begin{minipage}{0.32\textwidth}
-            \fbox{\includegraphics[width=\linewidth]{images/env3.png}}
+            \fbox{\includegraphics[width=\linewidth]{../images/env3.png}}
         \end{minipage}
         \caption{Examples of randomly generated train and test environments, with agent (blue) and goal (green) tiles.}
         \label{fig:env-examples}
@@ -110,7 +110,7 @@
 \begin{frame}{Results in Parametric Regime}
     \begin{figure}
         \centering
-        \includegraphics[height=0.8\textheight]{images/results_capacity.png}
+        \includegraphics[height=0.8\textheight]{../images/results_capacity.png}
         \caption{Results from TRPO agents trained on 100 maps for 50k episodes.}
         \label{fig:results-example}
     \end{figure}
@@ -119,7 +119,7 @@
 \begin{frame}{Results in Episodic Regime}
     \begin{figure}
         \centering
-        \includegraphics[height=0.8\textheight]{images/episodes_capacity.png}
+        \includegraphics[height=0.8\textheight]{../images/episodes_capacity.png}
         \caption{Results of a TRPO agent trained on 100 maps for 1.8M episodes.}
         \label{fig:episodes-example}
     \end{figure}

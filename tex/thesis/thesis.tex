@@ -1,0 +1,51 @@
+\documentclass[10pt,a4paper,twocolumn]{article}
+\usepackage{bachelorproject}
+\usepackage{subcaption}
+
+\title{\vspace{-0.5in}{\bfseries\scshape 
+    On The Existence of Double Descent in Reinforcement Learning
+    } \\ 
+    \vspace{1ex} 
+    \normalsize{Bachelor's Project Thesis}\vspace{-2ex}
+}
+
+\author{
+    \normalsize{Richard Harnisch, s5238366, r.f.harnisch@student.rug.nl,} \\ 
+    \normalsize{Supervisor: Dr. Matthia Sabatelli}
+}
+
+\date{\vspace{-5ex}}
+
+
+\begin{document}
+
+\twocolumn[
+  \maketitle
+  \begin{@twocolumnfalse}
+    \input{./tex/abstract.tex}
+  \end{@twocolumnfalse}
+]
+
+\thispagestyle{firststyle}
+
+\input{tex/introduction.tex}
+\input{tex/methods.tex}
+\input{tex/results.tex}
+\input{tex/discussion.tex}
+\input{tex/limitations.tex}
+\input{tex/future_work.tex}
+\input{tex/conclusion.tex}
+
+\bibliographystyle{apacite}
+\bibliography{../main}
+
+\clearpage
+
+% \begin{appendices}
+%   \input{tex/appendixA.tex}
+%   \newpage
+%   \input{tex/appendixB.tex}
+%   \newpage
+% \end{appendices}
+
+\end{document}

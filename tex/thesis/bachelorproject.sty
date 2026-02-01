@@ -20,12 +20,12 @@
 \usepackage{natbib}
 
 \ifx\pdfoutput\undefined
-  % we are running LaTeX, not pdflatex
-  \usepackage{graphicx}
+    % we are running LaTeX, not pdflatex
+    \usepackage{graphicx}
 \else
-  % we are running pdflatex, so convert .eps files to .pdf
-  \usepackage[pdftex]{graphicx}
-  \usepackage{epstopdf}
+    % we are running pdflatex, so convert .eps files to .pdf
+    \usepackage[pdftex]{graphicx}
+    \usepackage{epstopdf}
 \fi
 \selectlanguage{english}
 \DeclareCaptionFont{bold}{\bfseries}
@@ -56,9 +56,9 @@
 
 \fancypagestyle{firststyle}
 {
-   \fancyhf{}
-   \rfoot{\thepage}
-   \chead{\includegraphics[width=14cm]{./img/rugr_fse_ai_en_rood}}
+    \fancyhf{}
+    \rfoot{\thepage}
+    \chead{\includegraphics[width=14cm]{./images/rugr_fse_ai_en_rood}}
 }
 
 

@@ -1,7 +1,22 @@
 \section{Introduction}\label{sec:introduction}
-This is a document that helps you writing your Bachelor’s thesis. It has tips about academic writing style, but also about the style in which you have to write your thesis. A Bachelor’s thesis has a length of 10–15 pages (15 pages is the maximum). If you have more to discuss or show, you can put these additional materials in the Appendices at the end of the thesis. The appendices are not counted in the number of pages. 
+Double Descent is a well-studied phenomenon in supervised learning. When increasing model capacity, training time, or dataset size, the test risk of deep models begins to improve (decrease) with the train risk up until a "sweet spot" at which test risk is traditionally understood to be minimized. Past this point, increasing model capacity, training time, or dataset size leads to overfitting, a behavior where the model memorizes the training data and thus fails to generalize over unseen test data. In other words, a generalization gap grows between the test performance and the train performance. This behavior can be visualized as a U-shaped risk curve, as shown in Figure \ref{fig:u_shaped}.
 
-It is important that Bachelor’s theses have a uniform style so that its layout is predictable. It is also a good way to practise using a style defined by someone else. When you write papers for journals and conferences, you will have to keep to a particular style. In many cases, reports for companies and government organizations are also required to be in a particular format.
+\begin{figure}
+    \centering
+    \includegraphics[width=0.45\textwidth]{../images/u-shaped.pdf}
+    \caption{Traditional U-shaped risk curve. The training and test risk initially decrease together, until the model begins overfitting. Figure taken from \cite{Belkin_2019}.}
+    \label{fig:u_shaped}
+\end{figure}
 
-The style has two elements: the form and the content. A standard/uniform design ensures that reports can be easily compared and that the reader does not have to ‘get used to’ a new layout each time. A well-designed layout also makes the text easier to read. Uniformity of content enables the reader to find things easily in the text, and helps inexperienced writers to organize their material.
+However, work in the past years has shown that this traditional U-shaped risk curve is not the end of the story. Instead, after this initial overfitting phase, increasing model capacity, training time, or dataset size further leads to a second descent in test risk \citep{Belkin_2019,nakkiran2019deepdoubledescentbigger}, as can be seen in Figure \ref{fig:double_descent}. This phenomenon has been coined "Double Descent" (DD) and has been observed across various architectures and datasets in supervised learning \citep{nakkiran2019deepdoubledescentbigger}.
 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.45\textwidth]{../images/doubledescent.pdf}
+    \caption{Double Descent risk curve. After the initial overfitting phase, increasing model capacity, training time, or dataset size further leads to a second descent in test risk. Figure taken from \cite{Belkin_2019}.}
+    \label{fig:double_descent}
+\end{figure}
+
+The reason for this behavior remains unsolved, but with a number of complementary hypotheses.
+
+% TODO: explain hypotheses, perhaps using nakkiran 2019
