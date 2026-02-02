@@ -4,7 +4,7 @@
 \author{Richard Harnisch}
 \date{27 January 2026}
 \usepackage[backend=biber,style=authoryear]{biblatex}
-\addbibresource{main.bib}
+\addbibresource{../main.bib}
 
 \begin{document}
 
@@ -18,29 +18,26 @@
 
 \section{Double Descent Background}
 \begin{frame}{What is Double Descent?}
-    % Describe phenomenon of DD in SL and the paradox
     \begin{itemize}
         \item \textbf{Double Descent (DD)} is a phenomenon of models recovering generalization capacity after surpassing the interpolation threshold \parencite{nakkiran2019deepdoubledescentbigger}.
-        \item Classically, increasing model capacity leads to a U-shaped risk curve.
-        \item However, modern machine learning models often operate in regimes where they can perfectly fit (interpolate) the training data.
-        \item This can occur in both model size and training time regimens as well as multiple problem types in supervised learning \parencite{Belkin_2019, nakkiran2019deepdoubledescentbigger}.
+        \item Classically, increasing model capacity leads to a U-shaped risk curve:
+              \begin{figure}
+                  \centering
+                  \includegraphics[height=0.4\textheight]{../images/u-shaped.pdf}
+                  \caption{Classical U-shaped risk curve arising from the bias-variance trade-off. \textcite{Belkin_2019}.}
+                  \label{fig:u-shaped}
+              \end{figure}
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Classical U-shaped Risk Curve}
-    \begin{figure}
-        \centering
-        \includegraphics[height=0.5\textheight]{images/u-shaped.pdf}
-        \caption{Classical U-shaped risk curve arising from the bias-variance trade-off. \textcite{Belkin_2019}.}
-        \label{fig:u-shaped}
-    \end{figure}
-\end{frame}
-
 \begin{frame}{Double Descent Risk Curve}
-    % Double Descent risk curve, including U-shaped risk curve (the ``classical'' regime) together with the observed behavior from using high capacity function classes (the ``modern'' interpolating regime), separated by the interpolation threshold. Predictors to the right of the interpolation threshold have zero training risk.
+    \begin{itemize}
+        \item However, modern machine learning models often operate in regimes where they can perfectly fit (interpolate) the training data.
+        \item This can occur in both model size and training time regimens as well as multiple problem types in supervised learning \parencite{Belkin_2019, nakkiran2019deepdoubledescentbigger}.
+    \end{itemize}
     \begin{figure}
         \centering
-        \includegraphics[height=0.4\textheight]{images/doubledescent.pdf}
+        \includegraphics[height=0.35\textheight]{../images/doubledescent.pdf}
         \caption{Double Descent risk curve exhibiting a second descent. \textcite{Belkin_2019}.}
         \label{fig:double-descent}
     \end{figure}
@@ -65,17 +62,17 @@
     \begin{figure}
         \centering
         \begin{minipage}{0.32\textwidth}
-            \fbox{\includegraphics[width=\linewidth]{images/env1.png}}
+            \fbox{\includegraphics[width=\linewidth]{../images/env1.png}}
         \end{minipage}
         \hfill
         \begin{minipage}{0.32\textwidth}
-            \fbox{\includegraphics[width=\linewidth]{images/env2.png}}
+            \fbox{\includegraphics[width=\linewidth]{../images/env2.png}}
         \end{minipage}
         \hfill
         \begin{minipage}{0.32\textwidth}
-            \fbox{\includegraphics[width=\linewidth]{images/env3.png}}
+            \fbox{\includegraphics[width=\linewidth]{../images/env3.png}}
         \end{minipage}
-        \caption{Examples of randomly generated training and validation environments, with agent (blue) and goal (green) tiles.}
+        \caption{Examples of randomly generated train and test environments, with agent (blue) and goal (green) tiles.}
         \label{fig:env-examples}
     \end{figure}
     % - Move to methods
@@ -102,7 +99,7 @@
     \begin{itemize}
         \item We train two agent types: A DQN \parencite{mnih2013playingatarideepreinforcement} agent and a TRPO agent \parencite{schulman2017trustregionpolicyoptimization}, both using feedforward neural networks.
         \item DQNs implement Q-learning with experience replay using a neural network to estimate Q-values.
-        \item TRPO is a policy gradient method that optimizes the policy directly while constraining updates using a trust region defined by the KL divergence.
+        \item TRPO is a policy gradient method that optimizes the policy directly while constraining updates using a trust region defined by the Kullback-Leibler (KL) divergence.
         \item We vary the model capacity by changing the depth and width of the networks.
         \item Training is performed on a fixed set of training maps, with evaluation held-out test maps.
         \item We record the average return and trace of the FIM at various points during training to analyze the presence of Double Descent.
@@ -113,7 +110,7 @@
 \begin{frame}{Results in Parametric Regime}
     \begin{figure}
         \centering
-        \includegraphics[height=0.8\textheight]{images/results_capacity.png}
+        \includegraphics[height=0.8\textheight]{../images/results_capacity.png}
         \caption{Results from TRPO agents trained on 100 maps for 50k episodes.}
         \label{fig:results-example}
     \end{figure}
@@ -122,7 +119,7 @@
 \begin{frame}{Results in Episodic Regime}
     \begin{figure}
         \centering
-        \includegraphics[height=0.8\textheight]{images/episodes_capacity.png}
+        \includegraphics[height=0.8\textheight]{../images/episodes_capacity.png}
         \caption{Results of a TRPO agent trained on 100 maps for 1.8M episodes.}
         \label{fig:episodes-example}
     \end{figure}
@@ -142,8 +139,8 @@
 \begin{frame}{Limitations \& Future Work}
     \begin{itemize}
         \item We are constrained by limited access to compute, with training runs taking multiple days and wait times for available GPUs.
-        \item One avenue for further work is exploring the transition between lacking generalization and perfect generalization.
-        \item We observe no emerging generalization gap when training on 1,000 maps.
+        \item One avenue for further work is exploring the transition between lacking generalization and perfect generalization---we observe no emerging generalization gap when training on 1,000 maps.
+        \item Additionally, we could explore why the FIM trace's spike around the interpolation threshold comes back down despite the test return not moving.
         \item Further, training on larger maps as well as different algorithms could be explored, as well as stochastic transitions.
     \end{itemize}
 \end{frame}
@@ -162,7 +159,7 @@
 \begin{frame}{Environment Details}
     \begin{itemize}
         \item Each map is $8\times 8$ tiles, with the agent in the top left and the goal in the bottom right unless randomized.
-        \item Every other tile has a 20\% chance of being blocked, with a guaranteed path.
+        \item Every other tile has a 20\% chance of being a wall, with a possible path being guaranteed.
         \item At each timestep, the agent receives a reward given by:
               \begin{equation*}
                   r_t =
@@ -172,7 +169,7 @@
                   \end{cases}
               \end{equation*}
               where $\Phi(s) = \frac{\text{Euclidean distance to goal}}{100}$ is the potential function.
-        \item Episodes are truncated at 64 timesteps.
+        \item Episodes are truncated at 64 timesteps and terminated when the goal is reached.
         \item Action space: {up, right, down, left}, deterministic transitions.
         \item Observation space: $8\times 8$ grid with one-hot encoded tiles, frame stacking of 2 frames ($8\times 8\times 4\times 2 = 512$ bits).
     \end{itemize}
@@ -180,7 +177,7 @@
 
 \begin{frame}{Training Configurations}
     \begin{itemize}
-        \item On the following configurations, we trained agents of varying widths between 3 and 8 and depths between 4 and 1024:
+        \item On the following configurations, we trained agents of varying depths between 3 and 8 and widths between 4 and 1024:
               \begin{tabular}{l|c|c|l}
                   Type & Train Maps & Training Episodes & Start \& Goal Position                                            \\
                   \hline
@@ -203,7 +200,7 @@
 
 \begin{frame}{The Fisher Information Matrix}
     \begin{itemize}
-        \item The \textbf{Fisher Information Matrix} (FIM) is defined as:
+        \item The \textbf{Fisher Information Matrix} (FIM) (originally in \cite{fisher1921}, in this form in \cite{kakade2001}) is defined as:
               \begin{equation*}
                   F(\theta) = \mathbb{E}_{a, s \sim \pi_\theta} \left[ \nabla_\theta \log \pi_\theta(a|s) \nabla_\theta \log \pi_\theta(a|s)^T \right]
               \end{equation*}
@@ -212,7 +209,7 @@
         \item A FIM where $\theta = [\theta_1, \theta_2]^T$ is therefore a $2\times 2$ matrix given by
     \end{itemize}
     \begin{equation*}
-        \mathbb{E}
+        \mathbb{E}_{a, s \sim \pi_\theta}
         \begin{bmatrix}
             \left( \frac{\partial}{\partial \theta_1} \log \pi_\theta(a|s) \right)^2                                        & \frac{\partial}{\partial \theta_1} \log \pi_\theta(a|s) \frac{\partial}{\partial \theta_2} \log \pi_\theta(a|s) \\
             \frac{\partial}{\partial \theta_2} \log \pi_\theta(a|s) \frac{\partial}{\partial \theta_1} \log \pi_\theta(a|s) & \left( \frac{\partial}{\partial \theta_2} \log \pi_\theta(a|s) \right)^2
@@ -225,7 +222,8 @@
         \item We do not need to form the full $|\theta| \times |\theta|$ matrix!
         \item Recall $F = \mathbb{E}_{a, s \sim \pi_\theta} \left[ \nabla_\theta \log \pi_\theta(a|s) \nabla_\theta \log \pi_\theta(a|s)^T \right]$, and let
               $g = \nabla_\theta \log \pi_\theta(a|s)$. Then $F = \mathbb{E}[g g^T]$.
-        \item Since the trace of a matrix is the sum of its diagonal entries $\sum_i F_{ii}$, we have \begin{equation*}
+        \item Since the trace of a matrix is the sum of its diagonal entries $\sum_i F_{ii}$, we have (see \cite{Petersen2008}):
+              \begin{equation*}
                   \operatorname{tr}(F) = \sum_i \mathbb{E}[g_i^2] = \mathbb{E}\left[\sum_i g_i^2\right] = \mathbb{E}[g^T g] = \mathbb{E}[\|g\|_2^2].
               \end{equation*}
         \item We can thus form a Monte Carlo estimate of the trace of the FIM by sampling states from collected trajectories and actions from the policy in that state:
@@ -239,7 +237,7 @@
     \begin{itemize}
         \item \textbf{Deep Q-Networks (DQN)} \parencite{mnih2013playingatarideepreinforcement} are value-based and approximate the optimal action-value function $Q^*(s, a)$ using a neural network. The agent selects actions based on an $\epsilon$-greedy policy derived from the Q-values.
         \item \textbf{Trust Region Policy Optimization (TRPO)} \parencite{schulman2017trustregionpolicyoptimization} is a policy gradient method that optimizes the policy directly.
-        \item It uses a surrogate objective function given by the expected advantage $\mathbb{E}_{s, a \sim \pi_{\theta_\text{old}}} \left[ \frac{\pi_\theta(a|s)}{\pi_{\theta_\text{old}}(a|s)} A^{\pi_{\theta_\text{old}}}(s, a) \right]$.
+        \item TRPO uses a surrogate objective function given by the expected advantage $\mathbb{E}_{s, a \sim \pi_{\theta_\text{old}}} \left[ \frac{\pi_\theta(a|s)}{\pi_{\theta_\text{old}}(a|s)} A^{\pi_{\theta_\text{old}}}(s, a) \right]$.
         \item TRPO constrains the policy updates using a trust region defined by the Kullback-Leibler (KL) divergence to ensure stable learning by $D_{KL}(\pi_{\theta_\text{old}} || \pi_\theta) \leq \delta$ for some small $\delta$.
     \end{itemize}
 \end{frame}

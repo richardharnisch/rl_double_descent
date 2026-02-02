@@ -1,0 +1,22 @@
+\section{Introduction}\label{sec:introduction}
+Double Descent is a well-studied phenomenon in supervised learning. When increasing model capacity, training time, or dataset size, the test risk of deep models begins to improve (decrease) with the train risk up until a "sweet spot" at which test risk is traditionally understood to be minimized. Past this point, increasing model capacity, training time, or dataset size leads to overfitting, a behavior where the model memorizes the training data and thus fails to generalize over unseen test data. In other words, a generalization gap grows between the test performance and the train performance. This behavior can be visualized as a U-shaped risk curve, as shown in Figure \ref{fig:u_shaped}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.45\textwidth]{../images/u-shaped.pdf}
+    \caption{Traditional U-shaped risk curve. The training and test risk initially decrease together, until the model begins overfitting. Figure taken from \cite{Belkin_2019}.}
+    \label{fig:u_shaped}
+\end{figure}
+
+However, work in the past years has shown that this traditional U-shaped risk curve is not the end of the story. Instead, after this initial overfitting phase, increasing model capacity, training time, or dataset size further leads to a second descent in test risk \citep{Belkin_2019,nakkiran2019deepdoubledescentbigger}, as can be seen in Figure \ref{fig:double_descent}. This phenomenon has been coined "Double Descent" (DD) and has been observed across various architectures and datasets in supervised learning \citep{nakkiran2019deepdoubledescentbigger}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.45\textwidth]{../images/doubledescent.pdf}
+    \caption{Double Descent risk curve. After the initial overfitting phase, increasing model capacity, training time, or dataset size further leads to a second descent in test risk. Figure taken from \cite{Belkin_2019}.}
+    \label{fig:double_descent}
+\end{figure}
+
+The reason for this behavior remains unsolved, but with a number of complementary hypotheses.
+
+% TODO: explain hypotheses, perhaps using nakkiran 2019
