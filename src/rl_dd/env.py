@@ -46,6 +46,35 @@ class GridWorldEnv(gym.Env):
         self._cell_size = 16
         self._obs_stack: deque[np.ndarray] = deque(maxlen=config.frame_stack)
 
+    def optimal_return(self) -> float:
+        """Compute the best achievable return given current walls/start/goal."""
+        if self._walls is None:
+            self._walls = self._generate_grid()
+        path = self._shortest_path()
+        if path is None:
+            return float("nan")
+        if len(path) <= 1 or self.config.max_steps <= 0:
+            return 0.0
+
+        total = 0.0
+        steps = 0
+        goal = self._goal_pos
+        max_steps = self.config.max_steps
+        for idx in range(1, len(path)):
+            if steps >= max_steps:
+                break
+            prev = path[idx - 1]
+            cur = path[idx]
+            steps += 1
+            if cur == goal:
+                total += 1.0
+                break
+            prev_dist = float(np.linalg.norm(np.array(prev) - np.array(goal)))
+            new_dist = float(np.linalg.norm(np.array(cur) - np.array(goal)))
+            bonus = (prev_dist - new_dist) / 100.0
+            total += -0.01 + bonus
+        return total
+
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         super().reset(seed=seed)
         if seed is not None:
@@ -133,6 +162,39 @@ class GridWorldEnv(gym.Env):
             while len(self._obs_stack) < self.config.frame_stack:
                 self._obs_stack.append(first)
         return np.concatenate(list(self._obs_stack), axis=0)
+
+    def _shortest_path(self) -> Optional[list[Tuple[int, int]]]:
+        if self._walls is None:
+            return None
+        size = self.config.grid_size
+        start = self._start_pos
+        goal = self._goal_pos
+        queue = deque([start])
+        prev: dict[Tuple[int, int], Optional[Tuple[int, int]]] = {start: None}
+        while queue:
+            row, col = queue.popleft()
+            if (row, col) == goal:
+                break
+            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                nr, nc = row + dr, col + dc
+                if nr < 0 or nr >= size or nc < 0 or nc >= size:
+                    continue
+                if self._walls[nr, nc]:
+                    continue
+                nxt = (nr, nc)
+                if nxt in prev:
+                    continue
+                prev[nxt] = (row, col)
+                queue.append(nxt)
+        if goal not in prev:
+            return None
+        path = []
+        cur: Optional[Tuple[int, int]] = goal
+        while cur is not None:
+            path.append(cur)
+            cur = prev[cur]
+        path.reverse()
+        return path
 
     def _generate_grid(self) -> np.ndarray:
         size = self.config.grid_size
