@@ -1,0 +1,52 @@
+\section{Results}\label{sec:results}
+In this section, we present the results of our experiments searching for Double Descent in Reinforcement Learning. Unfortunately, across all configurations tested, we did not observe instances of Double Descent in the episoding or capacity regimes.
+
+\subsection{DQN Fails to Learn}
+Firstly, we examined performance using Deep Q-Networks (DQN) on our environment. Unfortunately, this architecture was unable to solve the environment altogether. We observe frequent catastrophic forgetting, with performance spikes being present but short-lived. Further examples of a DQN failing to learn the environment reliably can be found in the Appendix. % TODO: add appendix and cite it here!
+
+\begin{figure}[!hbtp]
+    \centering
+    \includegraphics[width=0.45\textwidth]{../images/dqn_performance.png}
+    \caption{DQN performance using a model with width 512 and depth 3 over 50,000 episodes on 100 training maps. The model is unable to solve the environment, and reward (respective mean return over 200 batches for legibility) never becomes positive.}
+    \label{fig:dqn_performance}
+\end{figure}
+
+This occurs over a range of different model capacities in DQNs. Figure \ref{fig:dqn_capacity} shows metrics a range of model capacities, defined by varying width and depth of the neural network. No Double Descent is observed, as neither curve exhibits significant learning. Similarly, the FIM trace does not show interesting movement, staying extremely close to zero throughout different model capacities.
+
+\begin{figure}[!hbtp]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../images/50seed_20k_dqn.png}
+        \caption{Performance of DQN using 50 training seeds and 20,000 training episodes per model.}
+        \label{fig:dqn_capacity_50seed}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../images/100seed_50k_dqn.png}
+        \caption{Performance of DQN using 100 training seeds and 50,000 training episodes per model.}
+        \label{fig:dqn_capacity_100seed}
+    \end{subfigure}
+    \caption{DQN training and test performance, and average Fisher information, as a function of model capacity (width and depth). Neither curve exhibits significant learning.}
+    \label{fig:dqn_capacity}
+\end{figure}
+
+These results are not useful to our study of Double Descent, as the model fails to learn the environment in the first place. We cannot observe a second ascent of the test performance if there is no first ascent. Considering the poor performance of DQN on this environment, we decided to move to a different architecture that we hoped would perform better.
+
+\subsection{TRPO: No Double Descent}
+We next examined performance using Trust Region Policy Optimization (TRPO) on our environment. This architecture was able to learn the environment reliably across a range of model capacities. However, we were again unable to observe Double Descent in either the episoding or capacity regimes.
+
+\subsubsection{Capacity Regime}
+In the capacity regime, we conducted studies to heuristically search the available hyperparameter space. Our two hyperparameters to calibrate here are size of the training set (in seeds) and amount of training time (in episodes). We varied both hyperparameters across a range of values, as shown in Table \ref{table:runs_capacity}.
+
+First, we examined performance using 10 training seeds and 10,000 training episodes per model, with the standard environment configuration. Figure \ref{fig:trpo_capacity_10seed} shows the results of this experiment.
+
+\begin{figure}[!hbtp]
+    \centering
+    \includegraphics[width=0.45\textwidth]{../images/10seed_10k.png}
+    \caption{TRPO training and test performance, and average Fisher information, as a function of model capacity (width and depth), using 10 training seeds and 10,000 training episodes per model.}
+    \label{fig:trpo_capacity_10seed}
+\end{figure}
+
+We can observe that both training and test performance are low when the model is at its smallest. As we increase model capacity, training performance increases rapidly until it hits the maximum reward

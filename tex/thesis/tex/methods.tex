@@ -8,7 +8,7 @@ To plot a Double Descent curve, we further need to define an analogue to risk. I
 \subsection{Environment}\label{sec:environment}
 The environments used for this study are mazes. Each map is contained in an $8\times 8$ grid, with the agent and the goal each taking up one tile. Tiles not occupied by the agent or the goal at game start are either empty or walls. Whether a tile is a wall is determined randomly during map generation, with a fixed probability of 0.2 for each tile to be a wall. This yields the possibility of generating maps that are unsolvable (i.e., there is no path from the agent to the goal). Such maps are discarded during generation and re-generated to ensure solvability. A selection of example maps can be seen in Figure \ref{fig:example_envs}. % TODO: create a figure showing an example map
 
-\begin{figure}[ht]
+\begin{figure}[!hbtp]
     \centering
     \begin{subfigure}[b]{0.3\textwidth}
         \centering
@@ -34,10 +34,22 @@ The environments used for this study are mazes. Each map is contained in an $8\t
     \label{fig:example_envs}
 \end{figure}
 
-The environment's observation space consists of a binary vector, representing a flattened $8\times 8$ grid where each tile is encoded using one-hot encoding to indicate whether it is empty, a wall, the agent's position, or the goal's position. Each observation includes the current state of the grid as well as the previous state---frame-stacking. Each observation therefore encodes $8\times 8\times 4\times 2 = 512$ bits. The action space is discrete and allows for moving in the four cardinal directions (up, down, left, right). Actions are deterministic---the agent moves in the selected direction, unless this tile is inaccessible either through being a wall or being out of bounds. In this case the agent does not move at all. An episode terminates when the agent reaches the goal or is truncated after 64 timesteps, and there is no discounting (i.e., $\gamma=1$).
+The position of the goal and starting position of the agent can be randomized or set manually. We study both settings. In the manual setting, the goal is always placed in the bottom-right corner of the map (coordinates (7,7)) and the agent always starts in the top-left corner (coordinates (0,0)). In the randomized setting, both the agent's starting position and the goal position are randomized to one of the corners of the map at the start of each episode.
+
+The environment's observation space consists of a binary vector, representing a flattened $8\times 8$ grid where each tile is encoded using one-hot encoding to indicate whether it is empty, a wall, the agent's position, or the goal's position. The state space for this Markov Decision Process (MDP) is thus
+
+\begin{equation}\label{eq:state_space}
+    \mathcal{S} = \{0, 1\}^{512}
+\end{equation}
+
+Each observation includes the current state of the grid as well as the previous state---frame-stacking. Each observation therefore encodes $8\times 8\times 4\times 2 = 512$ bits. The action space is discrete and allows for moving in the four cardinal directions:
+
+\begin{equation}\label{eq:action_space}
+    \mathcal{A} = \{\text{up}, \text{down}, \text{left}, \text{right}\}
+\end{equation}
 
 The agent receives a reward of +1 upon reaching the goal. In all other timesteps, a potential-based reward is applied. The potential function $\phi(s)$ is defined as one hundredth of the negative Euclidean distance from the agent's current position to the goal position. The reward at each timestep is then given by $r_t = \phi(s_t) - \phi(s_{t-1})$, encouraging the agent to move closer to the goal. Finally, the agent also receives a small time-penalty of -0.01 at each timestep to disincentivize standing still or taking suboptimal paths. Thus, the reward function is defined as follows:
-\begin{equation}
+\begin{equation}\label{eq:reward}
     r_t =
     \begin{cases}
         1,                                & \text{if goal reached} \\
@@ -49,9 +61,29 @@ with the potential function defined as:
     \phi(s) = -\frac{1}{100} \cdot d_{\text{euclidean}}(\text{agent\_pos}, \text{goal\_pos})
 \end{equation}
 
-For example, if the agent moves a distance of exactly 1 unit closer to the goal in a timestep, it receives a reward of $0.01 - 0.01 = 0$. In all other cases the reward is negative, except when the goal is reached. The maximum reward an agent can receive on a map depends on the map's configuration, as some can be solved in fewer steps than others. % do the math on what the maximum reward in an optimal map is (the potential based reward telescopes)
+For example, if the agent moves a distance of exactly 1 unit closer to the goal in a timestep, it receives a reward of $0.01 - 0.01 = 0$. In all other cases the reward is negative, except when the goal is reached. Considering the agent starts in the opposite corner in the standard configuration and can thus move no farther away, the minimum return in the standard configuration is $G_{min} = -0.01 \times 64 = -0.64$. The minimum return in the randomized configuration, occurring when the agent does not start opposite of the goal, can be further lowered by the potential to increase distance to the goal of
 
-The position of the goal and starting position of the agent can be randomized or set manually. We study both settings. In the manual setting, the goal is always placed in the bottom-right corner of the map (coordinates (7,7)) and the agent always starts in the top-left corner (coordinates (0,0)). In the randomized setting, both the agent's starting position and the goal position are randomized to one of the corners of the map at the start of each episode.
+\begin{align}
+    G_{min} & = \frac{1}{100}\times(\text{Max Distance} - \text{Starting Distance}) \\
+            & = \frac{1}{100}\times(\sqrt{7^2 + 7^2} - 8)                           \\
+            & \approx \frac{1}{100}\times(9.899 - 8)                                \\
+            & = \frac{1}{100}\times 1.899                                           \\
+            & = 0.01899
+\end{align}
+
+Thus the minimum return becomes $-0.64 - 0.01899 \approx -0.65899$. The maximum return an agent can receive on a map depends on the map's configuration, as some can be solved in fewer steps than others. However, we can compute the maximum return in the optimal case. Here, in the standard configuration, the agent needs at least 14 steps to reach the goal (moving 7 steps down and 7 steps right). In this case, the maximum return is:
+
+\begin{align}
+    G_{max} & = 1 - (0.01 \times 13) - \phi(s_{end}) + \phi(s_{start})                      \\
+            & = 1 - 0.13 - (\frac{1}{100}\times 0) + (\frac{1}{100}\times \sqrt{7^2 + 6^2}) \\
+            & \approx 0.87 + (\frac{1}{100}\times 9.21954446)                               \\
+            & = 0.87 + 0.09210                                                              \\
+            & = 0.96210                                                                     \\
+\end{align}
+
+Indeed, when computing the mean optimal return for all maps using seeds 0--9,999, we get 0.958585, slightly below this. This is expected as the frequency of maps in which the agent is forced to take more than 14 steps to reach the goal is very low---1.75\% among these seeds, to be precise. In the randomized configuration, the maximum return is 1.0, as the agent can be positioned so that it can move a full unit closer to the goal in every step and thus gain a reward of zero in every step until reaching the goal, when it gains a reward of 1.
+
+Therefore, the MDP under this environment can be formally defined as the tuple $(\mathcal{S}, \mathcal{A}, p, r, \gamma)$, where $\mathcal{S}$ is the state space as in \eqref{eq:state_space}, $\mathcal{A}$ is the action space as in \eqref{eq:action_space}, $p$ is the state transition probability function defined by the environment dynamics, $r$ is the reward function as in \eqref{eq:reward}, and $\gamma$ is the discount factor set to 1.
 
 \subsection{Metrics}
 For a y-axis representing train and test risk, we use mean return (i.e., average cumulative reward per episode) as a proxy for risk. Higher return indicates lower risk. We measure mean return on both the training environments (train risk) and the test environments (test risk) after every training epoch. To do this, we run an inference rollout on the set of training environments and the set of test environments. The set of test environments is equal in size to the set of training environments, up to a maximum of 100 test environments. Each test and train evaluation consists of running one episode on each environment in the respective set and taking the mean return across all episodes. We record this performance once every 10,000 training episodes. This is our most straightforward measure of a generalization gap between training and test performance, and in this context we would look for a "Double Ascent" as the test performance initially lags behind training performance before catching up again.
@@ -62,5 +94,88 @@ To further study generalization performance, we also measure the trace of the Fi
     F = \mathbb{E}_{(s,a) \sim \pi_\theta} \left[ \nabla_\theta \log \pi_\theta(a \mid s) \nabla_\theta \log \pi_\theta(a \mid s)^T \right]
 \end{equation}
 
-where $(s, a)$ are state-action pairs sampled from behavior under the policy $\pi_\theta$. The trace of the FIM, $\text{Tr}(F)$, provides a measure of the sensitivity of the model's parameters to changes in the data distribution. A high trace value indicates that the model is highly sensitive to the training data, which can be a sign of overfitting or memorization. Conversely, a lower trace value suggests that the model is more robust and generalizes better to unseen data. By tracking the trace of the FIM on both training and test environments, we can gain insights into the model's generalization capabilities and its tendency to overfit as training progresses. We would therefore expect the FIM trace to be roughly correlated with the size of the generalization gap, as higher FIM trace values should indicate more overfitting and thus a larger generalization gap.
+where $(s, a)$ are state-action pairs sampled from behavior under the policy $\pi_\theta$. In other words, the FIM is the expected outer product of the gradient with respect to the model parameters $\theta$ of the score function, which is the log-probability of taking action $a$ in state $s$. The FIM captures how much information about the parameters is contained in the actions taken by the policy in different states. Because of this definition, we can estimate the FIM using samples of state-action pairs collected during rollouts.
 
+Let $g = \nabla_\theta \log \pi_\theta(a \mid s)$ be the gradient of the log-probability of action $a$ given state $s$. Then the FIM is given by:
+\begin{equation}\label{eq:fim}
+    F = \mathbb{E}_{(s,a) \sim \pi_\theta} [g g^T]
+\end{equation}
+
+The trace of the FIM, $\text{Tr}(F)$, provides a measure of the sensitivity of the model's parameters to changes in the data distribution. A high trace value indicates that the model is highly sensitive to the training data, which can be a sign of overfitting or memorization. Conversely, a lower trace value suggests that the model is more robust and generalizes better to unseen data. By tracking the trace of the FIM on both training and test environments, we can gain insights into the model's generalization capabilities and its tendency to overfit as training progresses.
+
+Using the definition of the FIM in Equation \eqref{eq:fim}, we can derive an empirical estimator for the trace of the FIM without forming the full matrix using the fact that the trace of a matrix is defined as the sum of its diagonal elements (e.g. $\sum_i F_{ii}$). We can thus derive:
+\begin{align}
+    \text{Tr}(F) & = \text{Tr}(\mathbb{E}_{(s,a) \sim \pi_\theta} [g g^T]) \\
+                 & = \mathbb{E}_{(s,a) \sim \pi_\theta} [\text{Tr}(g g^T)] \\
+                 & = \mathbb{E}_{(s,a) \sim \pi_\theta} [g^T g]
+\end{align}
+Therefore, to form a Monte Carlo estimator for the trace of the FIM, we can sample $N$ state-action pairs $(s_i, a_i)$ from rollouts under the policy $\pi_\theta$ and compute the score function gradients $g_i = \nabla_\theta \log \pi_\theta(a_i \mid s_i)$ for each pair. The empirical estimator for the trace of the FIM is then given by:
+\begin{equation}
+    \widehat{\text{Tr}(F)} = \frac{1}{N} \sum_{i=1}^N g_i^T g_i
+\end{equation}
+where $g_i = \nabla_\theta \log \pi_\theta(a_i \mid s_i)$. This estimator allows us to compute the trace of the FIM efficiently without explicitly constructing the full matrix. Forming the full matrix would be prohibitively expensive for models with a large number of parameters (in the order of millions), as the FIM is of size $|F| \times |F|$ where $|F|$ is the number of parameters in the model.
+
+Considering the trace of the FIM naturally scales with the size of the FIM, we can compute a trace per parameter by dividing the trace by the number of parameters in the model. This allows us to compare FIM trace values across models of different sizes. Because the trace of a matrix is also the sum of its eigenvalues, the trace per parameter can be interpreted as the average eigenvalue of the FIM. In other words, this metric can be described as the average Fisher information.
+
+Considering we would expect higher average Fisher information when the model is overfitting or memorizing the training data, we can use this metric as a complementary measure of generalization performance alongside mean return. To support findings of Double Ascent in the mean return curves, we would expect to see the mean Fisher information to correlate with the size of the generalization gap between training and test performance. As the gap emerges, we would expect the mean Fisher information of the model to increase, which would remain until the gap narrows or closes.
+
+\subsection{Models}\label{sec:models}
+To conduct our experiment, we need to specify a model type. We run experiments both using a Deep Q-Network (DQN) \citep{mnih2013playingatarideepreinforcement} and using a Policy Gradient method, specifically using Trust Region Policy Optimization (TRPO) agent \citep{schulman2017trustregionpolicyoptimization}. Both models use a feedforward neural network as function approximator. The architecture of the neural network consists of an input layer matching the size of the observation space (512 units), followed by varying numbers of hidden layers of varying width with ReLU activations, and an output layer matching the size of the action space.
+
+\subsubsection{Deep Q-Networks}\label{sec:dqn}
+A Deep Q-Network (DQN) is a value-based Reinforcement Learning algorithm that approximates the optimal action-value function $Q^*(s, a)$ using a deep neural network. The action-value function estimates the expected cumulative reward for taking action $a$ in state $s$ and following the optimal policy thereafter. The DQN uses the Bellman equation as the foundation for its learning process, which states that the optimal action-value function satisfies:
+\begin{equation}
+    Q^*(s, a) = \mathbb{E}_{s'} \left[ r + \gamma \max_{a'} Q^*(s', a') \mid s, a \right]
+\end{equation}
+where $r$ is the immediate reward received after taking action $a$ in state $s$, $\gamma$ is the discount factor (in our case, $\gamma=1$), and $s'$ is the next state. The DQN approximates $Q^*(s, a)$ using a neural network parameterized by $\theta$, denoted as $Q(s, a; \theta)$. The network is trained to minimize the difference between the predicted Q-values and the target Q-values derived from the Bellman equation. The loss function $L(\theta)$ used for training the DQN is defined as:
+\begin{equation}
+    \mathbb{E}_{(s, a, r, s')} \left[ \left( r + \gamma \max_{a'} Q(s', a'; \theta^-) - Q(s, a; \theta) \right)^2 \right]
+\end{equation}
+where $\theta^-$ are the parameters of a target network that is periodically updated to stabilize training. The DQN employs experience replay, where transitions $(s, a, r, s')$ are stored in a replay buffer and sampled randomly during training to break correlations between consecutive samples and improve learning stability.
+
+We use a replay buffer size of 50,000 transitions and a target network update frequency of 5000 training steps. The DQN is trained using the Adam optimizer \citep{kingma2017adammethodstochasticoptimization} with a learning rate of 0.001 and a batch size of 64. The exploration-exploitation trade-off is managed using an epsilon-greedy strategy, where the exploration rate $\epsilon$ decays linearly from 1.0 to 0.05 over the first 30\% of the episodes.
+
+\subsubsection{Trust Region Policy Optimizer}\label{sec:trpo}
+Trust Region Policy Optimization (TRPO) is a policy gradient method that aims to optimize the policy directly while ensuring stable and monotonic improvement. TRPO achieves this by constraining the step size of policy updates using a trust region approach, which prevents large, destabilizing updates to the policy. The core idea of TRPO is to maximize a surrogate objective function subject to a constraint on the Kullback-Leibler (KL) divergence between the old and new policies. The surrogate objective function is defined as:
+
+\begin{equation}
+    L(\theta) = \mathbb{E}_{s, a \sim \pi_{\theta_{\text{old}}}} \left[ \frac{\pi_\theta(a \mid s)}{\pi_{\theta_{\text{old}}}(a \mid s)} A^{\pi_{\theta_{\text{old}}}}(s, a) \right]
+\end{equation}
+
+where $\pi_{\theta_{\text{old}}}$ is the old policy, $\pi_\theta$ is the new policy parameterized by $\theta$, and $A^{\pi_{\theta_{\text{old}}}}(s, a)$ is the advantage function estimating the relative value of action $a$ in state $s$ under the old policy. The KL divergence constraint is given by:
+
+\begin{equation}
+    \mathbb{E}_{s \sim \pi_{\theta_{\text{old}}}} \left[ D_{\text{KL}}(\pi_{\theta_{\text{old}}}(\cdot \mid s) \parallel \pi_\theta(\cdot \mid s)) \right] \leq \delta
+\end{equation}
+
+where $\delta$ is a predefined threshold that limits the size of the policy update. TRPO uses a conjugate gradient algorithm to solve the constrained optimization problem efficiently. The policy is updated iteratively by computing the natural gradient of the surrogate objective and scaling it to satisfy the KL divergence constraint.
+
+We implement TRPO using the same feedforward neural network architecture as described in Section \ref{sec:dqn}. The policy network outputs logits for each action, over which we use a softmax activation function to get a distribution over the action space. The value function is approximated using a separate value network with the same architecture but with a single output unit representing the state value. The advantage function is estimated using Generalized Advantage Estimation (GAE) to reduce variance in the policy gradient estimates.
+
+The TRPO hyperparameters are a maximum KL divergence of $\delta=10^{-2}$, conjugate-gradient iterations set to 10 with damping 0.1, backtracking coefficient 0.5 for 10 line-search steps, GAE $\lambda=0.95$, and a batch size of 20 episodes per policy update. The value function is optimized for 5 iterations per update using Adam with learning rate $10^{-3}$.
+
+\subsection{Training Runs}\label{sec:training_runs}
+To search for Double Descent, we ran the models described above on various configurations of training environments and training durations. On the following configurations, we trained agents of varying depths between 3 and 8 and widths between 4 and 1024: \\
+
+\begin{tabular}{l|c|c|l}\label{table:runs_capacity}
+    Type & Train Maps & Episodes  & Start \& Goal Position \\
+    \hline
+    TRPO & 10         & 10,000    & Standard\footnotemark  \\
+    DQN  & 50         & 20,000    & Standard               \\
+    DQN  & 100        & 50,000    & Standard               \\
+    TRPO & 50         & 20,000    & Randomized             \\
+    TRPO & 100        & 50,000    & Randomized             \\
+    TRPO & 500        & 1,000,000 & Standard               \\
+    TRPO & 750        & 1,000,000 & Standard               \\
+    TRPO & 1,000      & 1,000,000 & Standard               \\
+\end{tabular} \\
+\footnotetext{Agent starts in top left, goal in bottom right}
+
+On the following configurations, we trained agents of depth 3 and widths 4, 16, 64, 256, and 1024 for unlimited time (in practice for about 1.8M episodes, until our high performance cluster ended the jobs): \\
+
+\begin{tabular}{l|c|l}\label{table:runs_train_time}
+    Type & Train Maps & Start \& Goal Position \\
+    \hline
+    TRPO & 50         & Standard               \\
+    TRPO & 100        & Standard               \\
+\end{tabular}
