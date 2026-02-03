@@ -1,0 +1,31 @@
+\section{DQNs Failing To Learn}\label{sec:DQN-fails}
+Throughout runs, DQNs failed to learn a good policy on the environment.
+
+
+\begin{figure}[!hbtp]
+    \centering
+    \includegraphics[width=0.45\textwidth]{../images/dqn_performance.png}
+    \caption{A DQN's (width 512 and depth 3) performance over training episodes, trained on 100 seeds for 50,000 episodes each. We can see some initial learning, but the model seems to forget and revert to minimal return.}
+    \label{fig:dqn_performance}
+\end{figure}
+
+\begin{figure}[!hbtp]
+    \centering
+    \includegraphics[width=0.4\textwidth]{../images/dqn_performance_2.png}
+    \caption{A DQN's (width 512 and depth 3) performance over training episodes, trained on 50 seeds for 20,000 episodes each. We can see some initial learning, but the model seems to forget and revert to minimal return.}
+    \label{fig:dqn_performance_2}
+\end{figure}
+
+\begin{figure}[!hbtp]
+    \centering
+    \includegraphics[width=0.4\textwidth]{../images/dqn_performance_4.png}
+    \caption{A DQN's (width 1024 and depth 3) performance over training episodes, trained on 100 seeds for 50,000 episodes each. We can see some slow initial learning, but the model seems to forget and revert to minimal return.}
+    \label{fig:dqn_performance_4}
+\end{figure}
+
+\begin{figure}[!hbtp]
+    \centering
+    \includegraphics[width=0.4\textwidth]{../images/dqn_performance_3.png}
+    \caption{A DQN's (width 1024 and depth 3) performance over training episodes, trained on 50 seeds for 20,000 episodes each. We can see fluctuations in performance, but the model does not reliably solve the environment.}
+    \label{fig:dqn_performance_3}
+\end{figure}

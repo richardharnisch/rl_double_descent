@@ -6,7 +6,7 @@ To create train and test splits in Reinforcement Learning, we create a family of
 To plot a Double Descent curve, we further need to define an analogue to risk. In Supervised Learning, risk is typically defined as the expected loss (e.g., classification error, mean squared error) on a dataset. For our purposes, we use mean performance (i.e., average return) as a proxy for risk, where higher performance indicates lower risk. Additionally, we consider the trace of the Fisher Information Matrix (FIM) to indicate overfitting or memorizing in the model.
 
 \subsection{Environment}\label{sec:environment}
-The environments used for this study are mazes. Each map is contained in an $8\times 8$ grid, with the agent and the goal each taking up one tile. Tiles not occupied by the agent or the goal at game start are either empty or walls. Whether a tile is a wall is determined randomly during map generation, with a fixed probability of 0.2 for each tile to be a wall. This yields the possibility of generating maps that are unsolvable (i.e., there is no path from the agent to the goal). Such maps are discarded during generation and re-generated to ensure solvability. A selection of example maps can be seen in Figure \ref{fig:example_envs}. % TODO: create a figure showing an example map
+The environments used for this study are mazes. Each map is contained in an $8\times 8$ grid, with the agent and the goal each taking up one tile. Tiles not occupied by the agent or the goal at game start are either empty or walls. Whether a tile is a wall is determined randomly during map generation, with a fixed probability of 0.2 for each tile to be a wall. This yields the possibility of generating maps that are unsolvable (i.e., there is no path from the agent to the goal). Such maps are discarded during generation and re-generated to ensure solvability. A selection of example maps can be seen in Figure \ref{fig:example_envs}.
 
 \begin{figure}[!hbtp]
     \centering
@@ -83,14 +83,14 @@ Thus the minimum return becomes $-0.64 - 0.01899 \approx -0.65899$. The maximum 
 
 Indeed, when computing the mean optimal return for all maps using seeds 0--9,999, we get 0.958585, slightly below this. This is expected as the frequency of maps in which the agent is forced to take more than 14 steps to reach the goal is very low---1.75\% among these seeds, to be precise. In the randomized configuration, the maximum return is 1.0, as the agent can be positioned so that it can move a full unit closer to the goal in every step and thus gain a reward of zero in every step until reaching the goal, when it gains a reward of 1.
 
-Therefore, the MDP under this environment can be formally defined as the tuple $(\mathcal{S}, \mathcal{A}, p, r, \gamma)$, where $\mathcal{S}$ is the state space as in \eqref{eq:state_space}, $\mathcal{A}$ is the action space as in \eqref{eq:action_space}, $p$ is the state transition probability function defined by the environment dynamics, $r$ is the reward function as in \eqref{eq:reward}, and $\gamma$ is the discount factor set to 1.
+Therefore, the MDP under this environment can be formally defined as the tuple $(\mathcal{S}, \mathcal{A}, p, r, \gamma)$, where $\mathcal{S}$ is the state space as in Equation \eqref{eq:state_space}, $\mathcal{A}$ is the action space as in Equation \eqref{eq:action_space}, $p$ is the state transition probability function defined by the environment dynamics, $r$ is the reward function as in Equation \eqref{eq:reward}, and $\gamma$ is the discount factor set to 1.
 
 \subsection{Metrics}
 For a y-axis representing train and test risk, we use mean return (i.e., average cumulative reward per episode) as a proxy for risk. Higher return indicates lower risk. We measure mean return on both the training environments (train risk) and the test environments (test risk) after every training epoch. To do this, we run an inference rollout on the set of training environments and the set of test environments. The set of test environments is equal in size to the set of training environments, up to a maximum of 100 test environments. Each test and train evaluation consists of running one episode on each environment in the respective set and taking the mean return across all episodes. We record this performance once every 10,000 training episodes. This is our most straightforward measure of a generalization gap between training and test performance, and in this context we would look for a "Double Ascent" as the test performance initially lags behind training performance before catching up again.
 
 To further study generalization performance, we also measure the trace of the Fisher Information Matrix (FIM) after every training epoch. Instead of using the trajectory-based FIM, we use the state-action pair FIM, which is defined as:
 
-\begin{equation}
+\begin{equation}\label{eq:fim_definition}
     F = \mathbb{E}_{(s,a) \sim \pi_\theta} \left[ \nabla_\theta \log \pi_\theta(a \mid s) \nabla_\theta \log \pi_\theta(a \mid s)^T \right]
 \end{equation}
 
