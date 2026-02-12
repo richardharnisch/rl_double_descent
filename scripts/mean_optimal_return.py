@@ -8,7 +8,7 @@ from tqdm import trange
 
 
 def main() -> None:
-    config = GridWorldConfig(start_corner=0, goal_corner=2)
+    config = GridWorldConfig()
     returns = []
     suboptimal_maps = 0
     n = 10_000

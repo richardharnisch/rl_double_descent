@@ -9,75 +9,15 @@
   url           = {https://arxiv.org/abs/2310.05518}
 }
 
-% introduces minigrid and miniworld modular environments
-@article{chevalierboisvert2023minigridminiworldmodular,
-  title         = {Minigrid & Miniworld: Modular & Customizable Reinforcement Learning Environments for Goal-Oriented Tasks},
-  author        = {Maxime Chevalier-Boisvert and Bolun Dai and Mark Towers and Rodrigo de Lazcano and Lucas Willems and Salem Lahlou and Suman Pal and Pablo Samuel Castro and Jordan Terry},
-  year          = {2023},
-  eprint        = {2306.13831},
+% matthia's paper about dd in rl
+@misc{veselý2025presencedoubledescentdeepreinforcement,
+  title         = {On The Presence of Double-Descent in Deep Reinforcement Learning},
+  author        = {Viktor Veselý and Aleksandar Todorov and Matthia Sabatelli},
+  year          = {2025},
+  eprint        = {2511.06895},
   archiveprefix = {arXiv},
   primaryclass  = {cs.LG},
-  url           = {https://arxiv.org/abs/2306.13831}
-}
-
-% introduces procgen benchmark
-@article{cobbe2020leveragingproceduralgenerationbenchmark,
-  title         = {Leveraging Procedural Generation to Benchmark Reinforcement Learning},
-  author        = {Karl Cobbe and Christopher Hesse and Jacob Hilton and John Schulman},
-  year          = {2020},
-  eprint        = {1912.01588},
-  archiveprefix = {arXiv},
-  primaryclass  = {cs.LG},
-  url           = {https://arxiv.org/abs/1912.01588}
-}
-
-% introduces coinrun as RL generalization benchmark
-@article{cobbe2019quantifyinggeneralizationreinforcementlearning,
-  title         = {Quantifying Generalization in Reinforcement Learning},
-  author        = {Karl Cobbe and Oleg Klimov and Chris Hesse and Taehoon Kim and John Schulman},
-  year          = {2019},
-  eprint        = {1812.02341},
-  archiveprefix = {arXiv},
-  primaryclass  = {cs.LG},
-  url           = {https://arxiv.org/abs/1812.02341}
-}
-
-% introduces "double descent" phenomenon
-@article{doi:10.1073/pnas.1903070116,
-  author   = {Mikhail Belkin  and Daniel Hsu  and Siyuan Ma  and Soumik Mandal },
-  title    = {Reconciling modern machine-learning practice and the classical bias–variance trade-off},
-  journal  = {Proceedings of the National Academy of Sciences},
-  volume   = {116},
-  number   = {32},
-  pages    = {15849-15854},
-  year     = {2019},
-  doi      = {10.1073/pnas.1903070116},
-  url      = {https://www.pnas.org/doi/abs/10.1073/pnas.1903070116},
-  eprint   = {https://www.pnas.org/doi/pdf/10.1073/pnas.1903070116},
-  abstract = {While breakthroughs in machine learning and artificial intelligence are changing society, our fundamental understanding has lagged behind. It is traditionally believed that fitting models to the training data exactly is to be avoided as it leads to poor performance on unseen data. However, powerful modern classifiers frequently have near-perfect fit in training, a disconnect that spurred recent intensive research and controversy on whether theory provides practical insights. In this work, we show how classical theory and modern practice can be reconciled within a single unified performance curve and propose a mechanism underlying its emergence. We believe this previously unknown pattern connecting the structure and performance of learning architectures will help shape design and understanding of learning algorithms. Breakthroughs in machine learning are rapidly changing science and society, yet our fundamental understanding of this technology has lagged far behind. Indeed, one of the central tenets of the field, the bias–variance trade-off, appears to be at odds with the observed behavior of methods used in modern machine-learning practice. The bias–variance trade-off implies that a model should balance underfitting and overfitting: Rich enough to express underlying structure in data and simple enough to avoid fitting spurious patterns. However, in modern practice, very rich models such as neural networks are trained to exactly fit (i.e., interpolate) the data. Classically, such models would be considered overfitted, and yet they often obtain high accuracy on test data. This apparent contradiction has raised questions about the mathematical foundations of machine learning and their relevance to practitioners. In this paper, we reconcile the classical understanding and the modern practice within a unified performance curve. This “double-descent” curve subsumes the textbook U-shaped bias–variance trade-off curve by showing how increasing model capacity beyond the point of interpolation results in improved performance. We provide evidence for the existence and ubiquity of double descent for a wide spectrum of models and datasets, and we posit a mechanism for its emergence. This connection between the performance and the structure of machine-learning models delineates the limits of classical analyses and has implications for both the theory and the practice of machine learning.}
-}
-
-
-% implements sonic games as a gym environment to test generalization in RL
-@article{nichol2018gottalearnfastnew,
-  title         = {Gotta Learn Fast: A New Benchmark for Generalization in RL},
-  author        = {Alex Nichol and Vicki Pfau and Christopher Hesse and Oleg Klimov and John Schulman},
-  year          = {2018},
-  eprint        = {1804.03720},
-  archiveprefix = {arXiv},
-  primaryclass  = {cs.LG},
-  url           = {https://arxiv.org/abs/1804.03720}
-}
-
-% introduces rainbow DQN, a combination of several DQN improvements
-@article{hessel2017rainbowcombiningimprovementsdeep,
-  title         = {Rainbow: Combining Improvements in Deep Reinforcement Learning},
-  author        = {Matteo Hessel and Joseph Modayil and Hado van Hasselt and Tom Schaul and Georg Ostrovski and Will Dabney and Dan Horgan and Bilal Piot and Mohammad Azar and David Silver},
-  year          = {2017},
-  eprint        = {1710.02298},
-  archiveprefix = {arXiv},
-  primaryclass  = {cs.AI},
-  url           = {https://arxiv.org/abs/1710.02298}
+  url           = {https://arxiv.org/abs/2511.06895}
 }
 
 % original DQN paper
@@ -95,8 +35,7 @@
   abstract = {An artificial agent is developed that learns to play a diverse range of classic Atari 2600 computer games directly from sensory experience, achieving a performance comparable to that of an expert human player; this work paves the way to building general-purpose learning algorithms that bridge the divide between perception and action.}
 }
 
-% DD visualization for presentation
-@article{PhysRevResearch.4.013201,
+@article{Rocks2022MemorizingWithoutOverfitting,
   title     = {Memorizing without overfitting: Bias, variance, and interpolation in overparameterized models},
   author    = {Rocks, Jason W. and Mehta, Pankaj},
   journal   = {Phys. Rev. Res.},
@@ -120,32 +59,6 @@
   archiveprefix = {arXiv},
   primaryclass  = {cs.LG},
   url           = {https://arxiv.org/abs/1912.02292}
-}
-
-% plots for dd
-@article{Belkin_2019,
-  title     = {Reconciling modern machine-learning practice and the classical bias–variance trade-off},
-  volume    = {116},
-  issn      = {1091-6490},
-  url       = {http://dx.doi.org/10.1073/pnas.1903070116},
-  doi       = {10.1073/pnas.1903070116},
-  number    = {32},
-  journal   = {Proceedings of the National Academy of Sciences},
-  publisher = {Proceedings of the National Academy of Sciences},
-  author    = {Belkin, Mikhail and Hsu, Daniel and Ma, Siyuan and Mandal, Soumik},
-  year      = {2019},
-  month     = jul,
-  pages     = {15849–15854}
-}
-
-@misc{veselý2025presencedoubledescentdeepreinforcement,
-  title         = {On The Presence of Double-Descent in Deep Reinforcement Learning},
-  author        = {Viktor Veselý and Aleksandar Todorov and Matthia Sabatelli},
-  year          = {2025},
-  eprint        = {2511.06895},
-  archiveprefix = {arXiv},
-  primaryclass  = {cs.LG},
-  url           = {https://arxiv.org/abs/2511.06895}
 }
 
 % hutchinson's estimator for trace of FIM
@@ -268,8 +181,102 @@
   url           = {https://arxiv.org/abs/1903.08560}
 }
 
+@inproceedings{boes1996dynamics,
+  author = {Boes, Siegfried and Opper, Manfred},
+  year   = {1996},
+  month  = {01},
+  pages  = {141-147},
+  title  = {Dynamics of Training.}
+}
+
+@article{deng2012mnist,
+  title     = {The mnist database of handwritten digit images for machine learning research},
+  author    = {Deng, Li},
+  journal   = {IEEE Signal Processing Magazine},
+  volume    = {29},
+  number    = {6},
+  pages     = {141--142},
+  year      = {2012},
+  publisher = {IEEE}
+} 
+
+@article{Spigler2019JammingTransition,
+  author  = {Spigler, Stefano and Geiger, Mario and d'Ascoli, St{\'e}phane and Sagun, Levent and Biroli, Giulio and Wyart, Matthieu},
+  title   = {A jamming transition from under- to over-parametrization affects generalization in deep learning},
+  journal = {Journal of Physics A: Mathematical and Theoretical},
+  year    = {2019},
+  volume  = {52},
+  number  = {47},
+  pages   = {474001},
+  doi     = {10.1088/1751-8121/ab4c8b},
+  note    = {Machine Learning and Statistical Physics: Theory, Inspiration, Application}
+}
+
+@article{Geiger2020ScalingGeneralization,
+  author  = {Geiger, Mario and Jacot, Arthur and Spigler, Stefano and Gabriel, Franck and Sagun, Levent and d'Ascoli, St{\'e}phane and Biroli, Giulio and Hongler, Cl{\'e}ment and Wyart, Matthieu},
+  title   = {Scaling description of generalization with number of parameters in deep learning},
+  journal = {Journal of Statistical Mechanics: Theory and Experiment},
+  year    = {2020},
+  volume  = {2020},
+  number  = {2},
+  pages   = {023401},
+  doi     = {10.1088/1742-5468/ab633c},
+  note    = {Interdisciplinary statistical mechanics}
+}
+
+@article{Belkin_2019,
+  title     = {Reconciling modern machine-learning practice and the classical bias–variance trade-off},
+  volume    = {116},
+  issn      = {1091-6490},
+  url       = {http://dx.doi.org/10.1073/pnas.1903070116},
+  doi       = {10.1073/pnas.1903070116},
+  number    = {32},
+  journal   = {Proceedings of the National Academy of Sciences},
+  publisher = {Proceedings of the National Academy of Sciences},
+  author    = {Belkin, Mikhail and Hsu, Daniel and Ma, Siyuan and Mandal, Soumik},
+  year      = {2019},
+  month     = jul,
+  pages     = {15849–15854}
+}
+
+@article{song2021generalizationerrorrandomfeaturesregression,
+  author  = {Mei, Song and Montanari, Andrea},
+  year    = {2021},
+  month   = {06},
+  pages   = {},
+  title   = {The Generalization Error of Random Features Regression: Precise Asymptotics and the Double Descent Curve},
+  volume  = {75},
+  journal = {Communications on Pure and Applied Mathematics},
+  doi     = {10.1002/cpa.22008}
+}
+
+@article{Nakkiran_2021,
+  doi       = {10.1088/1742-5468/ac3a74},
+  url       = {https://doi.org/10.1088/1742-5468/ac3a74},
+  year      = {2021},
+  month     = {dec},
+  publisher = {IOP Publishing and SISSA},
+  volume    = {2021},
+  number    = {12},
+  pages     = {124003},
+  author    = {Nakkiran, Preetum and Kaplun, Gal and Bansal, Yamini and Yang, Tristan and Barak, Boaz and Sutskever, Ilya},
+  title     = {Deep double descent: where bigger models and more data hurt*},
+  journal   = {Journal of Statistical Mechanics: Theory and Experiment},
+  abstract  = {We show that a variety of modern deep learning tasks exhibit a ‘double-descent’ phenomenon where, as we increase model size, performance first gets worse and then gets better. Moreover, we show that double descent occurs not just as a function of model size, but also as a function of the number of training epochs. We unify the above phenomena by defining a new complexity measure we call the effective model complexity and conjecture a generalized double descent with respect to this measure. Furthermore, our notion of model complexity allows us to identify certain regimes where increasing (even quadrupling) the number of train samples actually hurts test performance.}
+}
+
+@misc{nakkiran2019datahurtlinearregression,
+  title         = {More Data Can Hurt for Linear Regression: Sample-wise Double Descent},
+  author        = {Preetum Nakkiran},
+  year          = {2019},
+  eprint        = {1912.07242},
+  archiveprefix = {arXiv},
+  primaryclass  = {stat.ML},
+  url           = {https://arxiv.org/abs/1912.07242}
+}
+
 @article{loog2020briefprehistorydoubledescent,
-  author  = {Marco Loog  and Tom Viering  and Alexander Mey  and Jesse H. Krijthe  and David M. J. Tax },
+  author  = {Marco Loog and Tom Viering and Alexander Mey and Jesse H. Krijthe and David M. J. Tax},
   title   = {A brief prehistory of double descent},
   journal = {Proceedings of the National Academy of Sciences},
   volume  = {117},
@@ -279,4 +286,38 @@
   doi     = {10.1073/pnas.2001875117},
   url     = {https://www.pnas.org/doi/abs/10.1073/pnas.2001875117},
   eprint  = {https://www.pnas.org/doi/pdf/10.1073/pnas.2001875117}
+}
+
+@article{dAscoli2021TripleDescent,
+  author  = {d'Ascoli, St{\'e}phane and Sagun, Levent and Biroli, Giulio},
+  title   = {Triple descent and the two kinds of overfitting: where and why do they appear?},
+  journal = {Journal of Statistical Mechanics: Theory and Experiment},
+  year    = {2021},
+  volume  = {2021},
+  number  = {12},
+  pages   = {124002},
+  doi     = {10.1088/1742-5468/ac3909}
+}
+
+@article{Buschjger2021ThereIsNoDoubleDescentRandomForests,
+  title   = {There is no Double-Descent in Random Forests},
+  author  = {Sebastian Buschj{\"a}ger and Katharina Morik},
+  journal = {ArXiv},
+  year    = {2021},
+  volume  = {abs/2111.04409},
+  url     = {https://api.semanticscholar.org/CorpusID:243848097}
+}
+
+@inproceedings{curth2023uturndoubledescent,
+  author    = {Curth, Alicia and Jeffares, Alan and van der Schaar, Mihaela},
+  title     = {A U-turn on double descent: rethinking parameter counting in statistical learning},
+  year      = {2023},
+  publisher = {Curran Associates Inc.},
+  address   = {Red Hook, NY, USA},
+  abstract  = {Conventional statistical wisdom established a well-understood relationship between model complexity and prediction error, typically presented as a U-shaped curve reflecting a transition between under- and overfitting regimes. However, motivated by the success of overparametrized neural networks, recent influential work has suggested this theory to be generally incomplete, introducing an additional regime that exhibits a second descent in test error as the parameter count p grows past sample size n - a phenomenon dubbed double descent. While most attention has naturally been given to the deep-learning setting, double descent was shown to emerge more generally across non-neural models: known cases include linear regression, trees, and boosting. In this work, we take a closer look at the evidence surrounding these more classical statistical machine learning methods and challenge the claim that observed cases of double descent truly extend the limits of a traditional U-shaped complexity-generalization curve therein. We show that once careful consideration is given to what is being plotted on the x-axes of their double descent plots, it becomes apparent that there are implicitly multiple, distinct complexity axes along which the parameter count grows. We demonstrate that the second descent appears exactly (and only) when and where the transition between these underlying axes occurs, and that its location is thus not inherently tied to the interpolation threshold p = n. We then gain further insight by adopting a classical nonparametric statistics perspective. We interpret the investigated methods as smoothers and propose a generalized measure for the effective number of parameters they use on unseen examples, using which we find that their apparent double descent curves do indeed fold back into more traditional convex shapes - providing a resolution to the ostensible tension between double descent and traditional statistical intuition.},
+  booktitle = {Proceedings of the 37th International Conference on Neural Information Processing Systems},
+  articleno = {2439},
+  numpages  = {31},
+  location  = {New Orleans, LA, USA},
+  series    = {NIPS '23}
 }
