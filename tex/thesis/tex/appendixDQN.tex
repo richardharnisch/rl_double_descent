@@ -1,31 +1,51 @@
 \section{DQNs Failing To Learn}\label{sec:DQN-fails}
-Throughout runs, DQNs failed to learn a good policy on the environment.
+Throughout runs, DQNs failed to learn a good policy on the environment. Examples of DQN mean return and episode length during training are shown in Figure~\ref{fig:dqn_performance}. In some cases we see some initial learning, but the model seems to forget and revert to minimal return. Plotting our DQN results by capacity, we see no significant learning happening across all tested capacities, as shown in Figure \ref{fig:dqn_capacity}.
 
-
-\begin{figure}[!hbtp]
+% TODO: fix up the empty space here
+\begin{figure*}[!hbtp]
     \centering
-    \includegraphics[width=0.45\textwidth]{../images/dqn_performance.png}
-    \caption{A DQN's (width 512 and depth 3) performance over training episodes, trained on 100 seeds for 50,000 episodes each. We can see some initial learning, but the model seems to forget and revert to minimal return.}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../images/dqn_performance.png}
+        \caption{A DQN with 3 hidden layers and 512 neurons per hidden layer, trained on 100 seeds for 50,000 episodes.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../images/dqn_performance_2.png}
+        \caption{A DQN with 3 hidden layers and 512 neurons per hidden layer, trained on 50 seeds for 20,000 episodes.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../images/dqn_performance_4.png}
+        \caption{A DQN with 3 hidden layers and 1024 neurons per hidden layer, trained on 100 seeds for 50,000 episodes.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../images/dqn_performance_3.png}
+        \caption{A DQN with 3 hidden layers and 1024 neurons per hidden layer, trained on 50 seeds for 20,000 episodes.}
+    \end{subfigure}
+    \caption{Mean return and episode length of selected DQNs during training.}
     \label{fig:dqn_performance}
-\end{figure}
+\end{figure*}
 
-\begin{figure}[!hbtp]
+\begin{figure*}[!hbtp]
     \centering
-    \includegraphics[width=0.4\textwidth]{../images/dqn_performance_2.png}
-    \caption{A DQN's (width 512 and depth 3) performance over training episodes, trained on 50 seeds for 20,000 episodes each. We can see some initial learning, but the model seems to forget and revert to minimal return.}
-    \label{fig:dqn_performance_2}
-\end{figure}
-
-\begin{figure}[!hbtp]
-    \centering
-    \includegraphics[width=0.4\textwidth]{../images/dqn_performance_4.png}
-    \caption{A DQN's (width 1024 and depth 3) performance over training episodes, trained on 100 seeds for 50,000 episodes each. We can see some slow initial learning, but the model seems to forget and revert to minimal return.}
-    \label{fig:dqn_performance_4}
-\end{figure}
-
-\begin{figure}[!hbtp]
-    \centering
-    \includegraphics[width=0.4\textwidth]{../images/dqn_performance_3.png}
-    \caption{A DQN's (width 1024 and depth 3) performance over training episodes, trained on 50 seeds for 20,000 episodes each. We can see fluctuations in performance, but the model does not reliably solve the environment.}
-    \label{fig:dqn_performance_3}
-\end{figure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../images/50seed_20k_dqn.png}
+        \caption{Metrics of DQNs using 50 training seeds and 20,000 training episodes per model.}
+        \label{fig:dqn_capacity_50seed}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../images/100seed_50k_dqn.png}
+        \caption{Metrics of DQNs using 100 training seeds and 50,000 training episodes per model.}
+        \label{fig:dqn_capacity_100seed}
+    \end{subfigure}
+    \caption{DQN training and test risk, and average Fisher information, as a function of model capacity. Neither curve exhibits significant learning.}
+    \label{fig:dqn_capacity}
+\end{figure*}

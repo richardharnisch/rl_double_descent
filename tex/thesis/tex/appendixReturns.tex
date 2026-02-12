@@ -1,0 +1,31 @@
+\section{Minimum and Maximum Environment Returns}\label{sec:appendix_return_calculations}
+We use $d_{max}$ to represent the maximum distance the agent can be from the goal, and $d_{start}$ to represent the distance from the agent's starting position to the goal, and $s_{start}$ and $s_{end}$ to represent the starting and ending states of the agent. To calculate the minimum reward in the randomized configuration, we assume the agent starts in a corner adjacent to the corner of the goal tile, so that the agent can move farther away. In this case, the reward can be calculated as follows:
+
+\begin{align}
+    G_{min} & = (-0.01\times 64) - \frac{1}{100}\times(d_{\max} - d_{\text{start}}) \\
+            & = -0.64 - \frac{1}{100}\times(\sqrt{7^2 + 7^2} - 8)                   \\
+            & \approx -0.64 - \frac{1}{100}\times(9.899 - 8)                        \\
+            & = -0.64 - \frac{1}{100}\times 1.899                                   \\
+            & = -0.64 - 0.01899                                                     \\
+            & = -0.65899
+\end{align}
+
+To calculate the minimum reward on the standard configuration, we assume the agent does not move any closer to the goal during the episode. Since it starts directly opposite from the goal, it cannot move any farther either. Therefore, the minimum reward in the standard configuration is simply the reward for taking 64 steps without reaching the goal: \begin{align} G_{min} & = -0.01\times 64 \\ & = -0.64 \end{align}. The maximum reward in the randomized configuration is achieved if the agent starts in the corner adjacent to the corner of the goal tile and reaches the goal by moving directly to the goal without having to move around any obstacles. In this case, the agent needs 7 timesteps to reach the goal. The time penalty and reward shaping are not applied in the timestep in which the agent reaches the goal, so the reward can be calculated as follows:
+
+\begin{align}
+    G_{max} & = (-0.01\times 6) - \frac{1}{100}\times(1 - d_{\text{start}}) + 1 \\
+    G_{max} & = -0.06 - \frac{1}{100}\times(1 - 7) + 1                          \\
+    G_{max} & = -0.06 - \frac{-6}{100} + 1                                      \\
+    G_{max} & = -0.06 + 0.06 + 1                                                \\
+    G_{max} & = 1
+\end{align}
+
+The maximum reward in the standard configuration is achieved if the agent reaches the goal in the minimum number of steps, which is 14 since the agent must move 7 tiles downwards and 7 tiles to the right. The last step does not include the time penalty or reward shaping, so the distance-based reward applies only until one tile next to the goal and the time penalty applies to only 13 steps. Thus the maximum reward is:
+
+\begin{align}
+    G_{max} & = 1 - (0.01 \times 13) - \phi(s_{end}) + \phi(s_{start})                      \\
+            & = 1 - 0.13 - (\frac{1}{100}\times 0) + (\frac{1}{100}\times \sqrt{7^2 + 6^2}) \\
+            & \approx 0.87 + (\frac{1}{100}\times 9.21954446)                               \\
+            & = 0.87 + 0.09210                                                              \\
+            & = 0.96210                                                                     \\
+\end{align}
