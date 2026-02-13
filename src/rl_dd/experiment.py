@@ -154,7 +154,13 @@ def append_csv(path: Path, rows: List[Dict[str, object]]) -> None:
             writer.writerow(row)
 
 
-def plot_results(summary: List[Dict[str, float]], path: Path, log_x: bool) -> None:
+def plot_results(
+    summary: List[Dict[str, float]],
+    path: Path,
+    log_x: bool,
+    perf_ylabel: str = "Average Return",
+    perf_title: str = "Average Return Across Different Model Capacities",
+) -> None:
     import matplotlib.pyplot as plt
 
     if not summary:
@@ -174,13 +180,13 @@ def plot_results(summary: List[Dict[str, float]], path: Path, log_x: bool) -> No
         fig, ax_perf = plt.subplots(figsize=(8, 5))
         ax_fim = None
 
-    ax_perf.errorbar(params, train_mean, yerr=train_std, label="train", marker="o")
-    ax_perf.errorbar(params, test_mean, yerr=test_std, label="test", marker="o")
+    ax_perf.errorbar(params, train_mean, yerr=train_std, label="Train Maps", marker="o")
+    ax_perf.errorbar(params, test_mean, yerr=test_std, label="Test Maps", marker="o")
     if log_x:
         ax_perf.set_xscale("log")
         ax_perf.set_xlim(min(params) / 1.5, max(params) * 1.5)
-    ax_perf.set_ylabel("Average return")
-    ax_perf.set_title("Performance vs parameter count")
+    ax_perf.set_ylabel(perf_ylabel)
+    ax_perf.set_title(perf_title)
     ax_perf.legend()
 
     if ax_fim is not None:
@@ -195,16 +201,20 @@ def plot_results(summary: List[Dict[str, float]], path: Path, log_x: bool) -> No
             fim_per_param.append(float(row["fim_mean"]) / num_params)
             fim_std.append(float(row.get("fim_std", 0.0)) / num_params)
         ax_fim.errorbar(
-            fim_params, fim_per_param, yerr=fim_std, label="fim/param", marker="o"
+            fim_params,
+            fim_per_param,
+            yerr=fim_std,
+            label="Average Fisher Information",
+            marker="o",
         )
         if log_x:
             ax_fim.set_xscale("log")
-        ax_fim.set_xlabel("Number of parameters")
-        ax_fim.set_ylabel("FIM trace per parameter")
-        ax_fim.set_title("FIM trace per parameter vs parameter count")
+        ax_fim.set_xlabel("Number of Parameters")
+        ax_fim.set_ylabel("Average Fisher Information")
+        ax_fim.set_title("Average Fisher Information Across Different Model Capacities")
         ax_fim.legend()
     else:
-        ax_perf.set_xlabel("Number of parameters")
+        ax_perf.set_xlabel("Number of Parameters")
 
     fig.tight_layout()
 
@@ -229,6 +239,60 @@ def collect_results(log_root: Path, log_x: bool) -> None:
     summary = aggregate_results(results)
     save_csv(log_root / "summary.csv", summary)
     plot_results(summary, log_root / "curve.png", log_x=log_x)
+
+
+def normalize_summary_returns(
+    summary: List[Dict[str, float]], min_return: float, max_return: float
+) -> List[Dict[str, float]]:
+    if max_return <= min_return:
+        raise ValueError("--max-return must be greater than --min-return.")
+    scale = max_return - min_return
+    normalized: List[Dict[str, float]] = []
+    for row in summary:
+        scaled = dict(row)
+        scaled["train_mean"] = (float(row["train_mean"]) - min_return) / scale
+        scaled["test_mean"] = (float(row["test_mean"]) - min_return) / scale
+        scaled["train_std"] = float(row["train_std"]) / scale
+        scaled["test_std"] = float(row["test_std"]) / scale
+        normalized.append(scaled)
+    return normalized
+
+
+def plot_from_metrics(
+    log_root: Path,
+    log_x: bool,
+    min_return: Optional[float] = None,
+    max_return: Optional[float] = None,
+) -> None:
+    metrics_path = log_root / "metrics.csv"
+    if not metrics_path.exists():
+        raise FileNotFoundError(f"Could not find metrics file: {metrics_path}")
+
+    results: List[Dict[str, float]] = []
+    with metrics_path.open("r", newline="") as handle:
+        reader = csv.DictReader(handle)
+        for row in reader:
+            parsed = {key: float(value) for key, value in row.items()}
+            results.append(parsed)
+
+    if not results:
+        print(f"No rows found in {metrics_path}; skipping curve plot.")
+        return
+
+    summary = aggregate_results(results)
+    perf_ylabel = "Average Return"
+    perf_title = "Average Return Across Different Model Capacities"
+    if min_return is not None and max_return is not None:
+        summary = normalize_summary_returns(summary, min_return, max_return)
+        perf_ylabel = "Normalized Mean Return"
+        perf_title = "Normalized Mean Return Across Different Model Capacities"
+    plot_results(
+        summary,
+        log_root / "curve.png",
+        log_x=log_x,
+        perf_ylabel=perf_ylabel,
+        perf_title=perf_title,
+    )
 
 
 def save_episode_metrics(
@@ -943,6 +1007,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-log-x", dest="log_x", action="store_false")
     parser.add_argument("--log-dir", default=None)
     parser.add_argument("--collect-only", action="store_true", default=False)
+    parser.add_argument("--plot-only", action="store_true", default=False)
+    parser.add_argument("--min-return", type=float, default=None)
+    parser.add_argument("--max-return", type=float, default=None)
     parser.add_argument("--log-every", type=int, default=0)
     parser.add_argument(
         "--save-model", dest="save_model", action="store_true", default=True
@@ -971,8 +1038,28 @@ def main() -> None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         args.log_dir = str(Path("results") / timestamp)
 
+    if args.collect_only and args.plot_only:
+        raise ValueError("Use only one of --collect-only or --plot-only.")
+
+    if (
+        args.min_return is not None or args.max_return is not None
+    ) and not args.plot_only:
+        raise ValueError("--min-return and --max-return require --plot-only.")
+
+    if (args.min_return is None) != (args.max_return is None):
+        raise ValueError("Provide both --min-return and --max-return together.")
+
     if args.collect_only:
         collect_results(Path(args.log_dir), log_x=args.log_x)
+        return
+
+    if args.plot_only:
+        plot_from_metrics(
+            Path(args.log_dir),
+            log_x=args.log_x,
+            min_return=args.min_return,
+            max_return=args.max_return,
+        )
         return
 
     if args.sanity_check:

@@ -12,7 +12,7 @@ def main() -> None:
     returns = []
     suboptimal_maps = 0
     perfect_maps = 0
-    n = 10_000
+    n = 50
     for seed in trange(n):
         env = GridWorldEnv(config, seed=seed)
         env.reset(seed=seed)
