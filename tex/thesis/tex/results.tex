@@ -47,7 +47,14 @@ To test whether the model type was able to learn an unseeded (that is, without a
 
 Here, we can observe that both training and test performance are very similar, as expected when the training set is so large---we completely cover the distribution of possible maps. Performance increases slowly with model capacity, stabilizing at approximately 0 mean return for both training and test performance. Considering no generalization gap emerges at all, we have no DD. The average Fisher information remains low, with one spike near the lowest model capacity, which is caused by an outlier in the data. This aligns with our expectation that the model does not memorize the training set, as it has effectively seen the full distribution of maps already.
 
-At this stage, we noticed the training performance was not reaching the maximum possible return of approximately 0.96 mean return, even at very high model capacities. We hypothesized that increasing the amount of training time per model would allow the models to reach higher training performance, and thus potentially observe DD in test performance. We thus increased the amount of training episodes per model to 1,000,000. For this newly increased training time, we tested training set sizes of 500, 750, and 1,000 maps. Figures \ref{fig:trpo_capacity_500seed}, \ref{fig:trpo_capacity_750seed}, and \ref{fig:trpo_capacity_1000seed} show the results of these experiments.
+At this stage, we noticed the training performance was not reaching the maximum possible return of approximately 0.96 mean return, even at very high model capacities. We hypothesized that increasing the amount of training time per model would allow the models to reach higher training performance, and thus potentially observe DD in test performance. We thus increased the amount of training episodes per model to 1,000,000. For this newly increased training time, we tested training set sizes of 100, 500, 750, and 1,000 maps. Figures \ref{fig:trpo_capacity_100seed_1M}, \ref{fig:trpo_capacity_500seed}, \ref{fig:trpo_capacity_750seed}, and \ref{fig:trpo_capacity_1000seed} show the results of these experiments.
+
+\begin{figure}[!hbtp]
+    \centering
+    \includegraphics[width=0.45\textwidth]{../images/100seed_1M.png}
+    \caption{TRPO training and test performance, and average Fisher information, as a function of model capacity, using 100 training seeds and 1,000,000 training episodes per model.}
+    \label{fig:trpo_capacity_100seed_1M}
+\end{figure}
 
 \begin{figure}[!hbtp]
     \centering
@@ -76,14 +83,14 @@ Finally, on our initial configurations of 50 training seeds and 20,000 training 
 
 \begin{figure}[!hbtp] % again, in general DO NOT include multiple figures that all tell the same story. make plots next to each other not above, escpae column layout
     \centering
-    \includegraphics[width=0.45\textwidth]{../images/50seed_20k_random.png}
+    \includegraphics[width=0.45\textwidth]{../images/50seed_randcorner_20k.png}
     \caption{TRPO training and test performance, and average Fisher information, as a function of model capacity, using 50 training seeds and 20,000 training episodes per model and randomized start and goal positions.}
     \label{fig:50seed_20k_random}
 \end{figure}
 
 \begin{figure}[!hbtp]
     \centering
-    \includegraphics[width=0.45\textwidth]{../images/100seed_50k_random.png}
+    \includegraphics[width=0.45\textwidth]{../images/100seed_randcorner_50k.png}
     \caption{TRPO training and test performance, and average Fisher information, as a function of model capacity, using 100 training seeds and 50,000 training episodes per model and randomized start and goal positions.}
     \label{fig:100seed_50k_random}
 \end{figure}
@@ -95,14 +102,14 @@ As discussed, DD can also occur with respect to the amount of optimization steps
 
 \begin{figure}[!hbtp]
     \centering
-    \includegraphics[width=0.45\textwidth]{../images/50seed_unlim_1024.png}
+    \includegraphics[width=0.45\textwidth]{../images/50s_w1024.png}
     \caption{TRPO training and test performance over time for a model of width 1024 and depth 3, using 50 training seeds and unlimited training episodes.}
     \label{fig:50seed_unlim_1024}
 \end{figure}
 
 \begin{figure}[!hbtp]
     \centering
-    \includegraphics[width=0.45\textwidth]{../images/100seed_unlim_1024.png}
+    \includegraphics[width=0.45\textwidth]{../images/100s_w1024.png}
     \caption{TRPO training and test performance over time for a model of width 1024 and depth 3, using 100 training seeds and unlimited training episodes.}
     \label{fig:100seed_unlim_1024}
 \end{figure}
