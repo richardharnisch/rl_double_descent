@@ -502,39 +502,86 @@ def append_periodic_eval(
     return row
 
 
-def plot_periodic_eval(rows: List[Dict[str, object]], path: Path) -> None:
+def plot_periodic_eval(
+    rows: List[Dict[str, object]],
+    path: Path,
+    min_return: Optional[float] = None,
+    max_return: Optional[float] = None,
+) -> None:
     if not rows:
         return
     import matplotlib.pyplot as plt
 
-    required = {"episode", "train_return", "test_return", "fim_trace"}
+    required = {"episode", "train_return", "test_return", "fim_trace", "num_params"}
     if not required.issubset(rows[0].keys()):
         return
 
     episodes = [int(row["episode"]) for row in rows]
     train_returns = [float(row["train_return"]) for row in rows]
     test_returns = [float(row["test_return"]) for row in rows]
-    fim_traces = [float(row["fim_trace"]) for row in rows]
+    fim_per_param = []
+    for row in rows:
+        num_params = float(row["num_params"])
+        if num_params <= 0:
+            raise ValueError("num_params must be positive in periodic_eval.csv.")
+        fim_per_param.append(float(row["fim_trace"]) / num_params)
+
+    ret_ylabel = "Return"
+    ret_title = "Periodic eval return"
+    if min_return is not None and max_return is not None:
+        if max_return <= min_return:
+            raise ValueError("--max-return must be greater than --min-return.")
+        scale = max_return - min_return
+        train_returns = [(ret - min_return) / scale for ret in train_returns]
+        test_returns = [(ret - min_return) / scale for ret in test_returns]
+        ret_ylabel = "Normalized Return"
+        ret_title = "Normalized Return During Training"
 
     fig, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
     ax_ret, ax_fim = axes
 
-    ax_ret.plot(episodes, train_returns, label="train")
-    ax_ret.plot(episodes, test_returns, label="test", color="tab:orange")
-    ax_ret.set_ylabel("Return")
-    ax_ret.set_title("Periodic eval return")
+    ax_ret.plot(episodes, train_returns, label="Train maps", color="tab:blue")
+    ax_ret.plot(episodes, test_returns, label="Test maps", color="tab:orange")
+    ax_ret.set_ylabel(ret_ylabel)
+    ax_ret.set_title(ret_title)
     ax_ret.legend()
 
-    ax_fim.plot(episodes, fim_traces, label="fim_trace", color="tab:green")
+    ax_fim.plot(
+        episodes, fim_per_param, label="Average Fisher Information", color="tab:blue"
+    )
     ax_fim.set_xlabel("Episode")
-    ax_fim.set_ylabel("FIM trace")
-    ax_fim.set_title("FIM trace vs episode")
+    ax_fim.set_ylabel("Average Fisher Information")
+    ax_fim.set_title("Average Fisher Information During Training")
     ax_fim.legend()
 
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(path, dpi=150)
     plt.close()
+
+
+def plot_periodic_from_csv(
+    log_root: Path,
+    min_return: Optional[float] = None,
+    max_return: Optional[float] = None,
+) -> None:
+    periodic_files = sorted(log_root.glob("w*_d*_run*/periodic_eval.csv"))
+    print(f"Found {len(periodic_files)} periodic_eval.csv files in {log_root}.")
+    for periodic_path in periodic_files:
+        rows: List[Dict[str, object]] = []
+        with periodic_path.open("r", newline="") as handle:
+            reader = csv.DictReader(handle)
+            for row in reader:
+                rows.append(row)
+        if not rows:
+            print(f"No rows found in {periodic_path}; skipping.")
+            continue
+        plot_periodic_eval(
+            rows,
+            periodic_path.parent / "periodic_eval.png",
+            min_return=min_return,
+            max_return=max_return,
+        )
 
 
 def run_sanity_check(args: argparse.Namespace) -> None:
@@ -1008,6 +1055,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--log-dir", default=None)
     parser.add_argument("--collect-only", action="store_true", default=False)
     parser.add_argument("--plot-only", action="store_true", default=False)
+    parser.add_argument("--periodic-plot-only", action="store_true", default=False)
     parser.add_argument("--min-return", type=float, default=None)
     parser.add_argument("--max-return", type=float, default=None)
     parser.add_argument("--log-every", type=int, default=0)
@@ -1038,13 +1086,20 @@ def main() -> None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         args.log_dir = str(Path("results") / timestamp)
 
-    if args.collect_only and args.plot_only:
-        raise ValueError("Use only one of --collect-only or --plot-only.")
+    mode_count = (
+        int(args.collect_only) + int(args.plot_only) + int(args.periodic_plot_only)
+    )
+    if mode_count > 1:
+        raise ValueError(
+            "Use only one of --collect-only, --plot-only, or --periodic-plot-only."
+        )
 
-    if (
-        args.min_return is not None or args.max_return is not None
-    ) and not args.plot_only:
-        raise ValueError("--min-return and --max-return require --plot-only.")
+    if (args.min_return is not None or args.max_return is not None) and not (
+        args.plot_only or args.periodic_plot_only
+    ):
+        raise ValueError(
+            "--min-return and --max-return require --plot-only or --periodic-plot-only."
+        )
 
     if (args.min_return is None) != (args.max_return is None):
         raise ValueError("Provide both --min-return and --max-return together.")
@@ -1057,6 +1112,14 @@ def main() -> None:
         plot_from_metrics(
             Path(args.log_dir),
             log_x=args.log_x,
+            min_return=args.min_return,
+            max_return=args.max_return,
+        )
+        return
+
+    if args.periodic_plot_only:
+        plot_periodic_from_csv(
+            Path(args.log_dir),
             min_return=args.min_return,
             max_return=args.max_return,
         )

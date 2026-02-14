@@ -106,7 +106,8 @@ Logging and plots
 - `--log-dir` (default: `results/<timestamp>`): Base directory for all logs. Each run writes to its own subdirectory.
 - `--collect-only` (default: disabled): Skip training and compile `metrics.csv`, `summary.csv`, and `curve.png` from existing run directories.
 - `--plot-only` (default: disabled): Skip training and regenerate only `curve.png` from the existing top-level `metrics.csv`.
-- `--min-return` / `--max-return` (default: unset): With `--plot-only`, rescale train/test returns to proportions using `(return - min_return) / (max_return - min_return)` before plotting.
+- `--periodic-plot-only` (default: disabled): Skip training and regenerate each run's `periodic_eval.png` from existing `w*_d*_run*/periodic_eval.csv` files.
+- `--min-return` / `--max-return` (default: unset): With `--plot-only` or `--periodic-plot-only`, rescale train/test returns to proportions using `(return - min_return) / (max_return - min_return)` before plotting.
 - `--log-every` (default: `0`): Save `episodes.csv`/`episodes.png`, `trpo_updates.csv` (TRPO), and configured GIFs every N episodes by overwriting the current files; also appends train/test evals plus FIM trace to `periodic_eval.csv` and updates `periodic_eval.png`; set `0` to disable.
   Periodic eval rows include `episode`, `train_return`, `test_return`, `fim_trace`, and the run metadata columns.
 - `--save-model` / `--no-save-model` (default: save model enabled): Enable or disable writing `.pt` model checkpoints.
