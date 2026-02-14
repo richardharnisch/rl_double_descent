@@ -1,0 +1,170 @@
+\section{Methods}\label{sec:methods}
+% TODO: formulate everything under empirical/expected risk perspective, make sure you don't refer to the same concept as "loss", "risk", "performance", "return", "reward", etc. without defining what you mean by these terms
+This section describes the methods we use to investigate the existence of DD in RL. We first outline mathematical preliminaries of RL concepts and notations. We then showcase the environment we use to create train and test splits in RL, and the metrics we use to measure generalization performance. Finally, we describe the training setup and algorithms we use for our models.
+
+% TODO: re-read this section, probably scrap this commented out text
+% We can define DD in SL as an emergence and then narrowing of a generalization gap between test and train risk. Thus, to study DD in RL, we need to define analogous concepts for test and train splits as well as risk. In SL, this is straightforward: the training split is the data the model is trained on, and the test split is held-out data the model has not seen during training. The train risk is computed as the empirical risk of the model, calculated on the train set using a loss function, while the test risk is computed as expected risk, approximated by using the same loss function on the test set. Common loss functions include mean squared error for regression tasks and cross-entropy loss for classification tasks. In RL, however, the concepts of train and test splits and calculating risk are less clear-cut, since the agent learns from interactions with an environment rather than from a fixed dataset.
+
+% This approach allows us to assess the agent's ability to generalize its learned policy to new, unseen environments. To replace the concept or risk, we use mean return as a proxy for risk, where higher performance indicates lower risk. Additionally, we consider the Fisher Information Matrix (FIM) to indicate overfitting or memorizing in the model.
+
+
+% consider putting the literature review and preliminaries into a separate section?
+% also, re-read this and fix it up!
+\subsection{RL Preliminaries}
+In RL, an agent interacts with an environment modeled as a Markov Decision Process (MDP), defined by the tuple $(\mathcal{S}, \mathcal{A}, p, r, \gamma)$. $\mathcal{S}$ represents the state space of the environment, which is the set of states that the agent can be in. $\mathcal{A}$ is the action space, which is the set of actions that the agent can take. The transition probability function $p: \mathcal{S} \times \mathcal{A} \times \mathcal{S} \to [0, 1] = p(S_{t+1} | A_t, S_t)$ defines the probability of transitioning to state $S_{t+1}$ given that the agent is in state $S_t$ and takes action $A_t$. The reward function $r: \mathcal{S} \times \mathcal{A} \to \mathbb{R} = r(S_t, A_t)$ assigns a scalar reward to each state-action pair, indicating the immediate reward the agent receives for taking action $A_t$ in state $S_t$. We can shape the reward using a potential function $\phi: \mathcal{S} \to \mathbb{R}$, which allows us to modify the reward structure to encourage certain behaviors. When using a potential function to shape the reward, the reward function becomes $r': \mathcal{S} \times \mathcal{A} \to \mathbb{R} = r(S_t, A_t) + \gamma \phi(S_{t+1}) - \phi(S_t)$, where $\gamma$ is the discount factor. This formulation encourages the agent to move towards states with higher potential, which can guide the learning process. The discount factor $\gamma \in [0, 1]$ determines the importance of future rewards compared to immediate rewards. When calculating future rewards, the agent discounts a reward $t$ time steps in the future by $\gamma^t$, meaning that rewards received further in the future are valued less than immediate rewards, and decreasing $\gamma$ places increases the emphasis placed on immediate rewards. The agent's behavior is determined by a policy $\pi_\theta: \mathcal{A} \times \mathcal{S} \to [0, 1] = \pi_\theta(a | s)$, which is a function defined by a parameter vector $\theta$ that yields the probability of selecting a specific action in a specific state.
+
+One episode of interaction with the environment is defined as a sequence of states, actions, and rewards: $\tau = (s_0, a_0, r_0, s_1, a_1, r_1, \ldots)$, where $s_t$ is the state at time step $t$, $a_t$ is the action taken at time step $t$, and $r_t$ is the immediate reward received at time step $t$. The return $G_t$ at time step $t$ is defined as the discounted sum of future rewards: $G_t = \sum_{k=0}^{\infty} \gamma^k r_{t+k}$. The agent's objective is to learn a policy that maximizes the expected return from each state, which is achieved by varying the parameter vector $\theta$. We can express the expected return of following the policy $\pi_\theta$ from state $s$ taking actino $a$ as the action-value function $q_{\pi_\theta}(s, a): \mathcal{S} \times \mathcal{A} \to \mathbb{R} = \mathbb{E}_{\pi_\theta}[G_t | s_t = s, a_t = a]$. The state-value function $v_\pi(s): \mathcal{S} \to \mathbb{R} = \mathbb{E}_{\pi_\theta}[G_t | s_t = s]$ is the expected return from state $s$ when following policy $\pi$. The advantage function $a_{\pi_\theta}(s, a): \mathcal{S} \times \mathcal{A} \to \mathbb{R} = q_{\pi_\theta}(s, a) - v_{\pi_\theta}(s)$ represents how much better taking action $a$ and following the policy $\pi_\theta$ in state $s$ is compared to the expected return in that state under policy $\pi$. The agent learns by updating its policy parameters $\theta$ based on the observed returns and the estimated value functions, using algorithms such as policy gradients or value iteration.
+% TODO: need a subsection on RL preliminaries, where you define the MDP, the policy, the value function, etc., otherwise you are just throwing these terms around without defining them. make sure to use sutton and barto!
+% we have now defined: the MDP and its components, potential based reward shaping, the policy, the return, trajectories, the state value function, the action value function, the advantage function, theta
+
+\subsection{Environment}\label{sec:environment}
+As an analogue to train/test splits in SL, we create a family of environments randomly generated based on a seed, implemented as a subclass of the \texttt{gymnasium} \citep{towers2024gymnasium} \texttt{Env} class. Each environment in this family shares the same underlying structure (e.g., state and action space, transition dynamics, reward structure) but differs in its layout. By training an agent on a subset of these environments (the train split) and evaluating its performance on a separate subset of unseen environments (the test split), we can emulate the train-test paradigm from SL. The environments used for this study are mazes. Each map is contained in an $8\times 8$ grid, with the agent and the goal each taking up one tile. Tiles not occupied by the agent or the goal at game start are either empty or walls. Whether a tile is a wall is determined randomly during map generation, with a fixed probability of 0.2 for each tile to be a wall. This yields the possibility of generating maps that are unsolvable (i.e., there is no path from the agent to the goal). Such maps are discarded during generation and re-generated to ensure solvability. The position of the goal and starting position of the agent can be randomized or set manually. In the manual setting, the goal is always placed in the bottom-right corner of the map (coordinates (7,7)) and the agent always starts in the top-left corner (coordinates (0,0)). In the randomized setting, both the agent's starting position and the goal position are randomized to one of the corners of the map at the start of each episode. Two example maps can be seen in Figure \ref{fig:example_envs}.
+\begin{figure}[!t]
+    \centering
+    \begin{subfigure}[b]{0.2\textwidth}
+        \centering
+        \fbox{\includegraphics[width=\textwidth]{../images/env_standard.png}}
+        \caption{Standard configuration.}
+        \label{fig:env1}
+    \end{subfigure}\hfill
+    \begin{subfigure}[b]{0.2\textwidth}
+        \centering
+        \fbox{\includegraphics[width=\textwidth]{../images/env_random.png}}
+        \caption{Randomized configuration.}
+        \label{fig:env3}
+    \end{subfigure}
+    \caption{Example environments. Walls are shown in black, the agent in blue, and the goal in green.}
+    \label{fig:example_envs}
+\end{figure}
+
+The environment's observation space consists of a binary vector, representing a flattened $8\times 8$ grid where each tile is encoded using one-hot encoding to indicate whether it is empty, a wall, the agent's position, or the goal's position. Each observation includes the current state of the grid as well as the previous state (frame stacking). Each observation therefore encodes $8\times 8\times 4\times 2 = 512$ bits. The state space for this Markov Decision Process (MDP) is thus
+
+\begin{equation}\label{eq:state_space}
+    \mathcal{S} = \{0, 1\}^{512}
+\end{equation}
+
+The action space is discrete and allows for moving in the four cardinal directions:
+
+\begin{equation}\label{eq:action_space}
+    \mathcal{A} = \{\text{up}, \text{down}, \text{left}, \text{right}\}
+\end{equation}
+
+$p(s_{t+1} | s_t, a_t)$ is deterministic and always results in moving in the specified direction if it is accessible. If it is a wall or out of bounds, the agent does not move and $s_{t+1} = s_t$. The agent receives a reward of $+1$ upon reaching the goal. In all other timesteps, a small time penalty is applied together with potential based reward shaping based on the euclidean distance to the goal: % TODO: make it actually be a function r(s) and not a signal. check the sutton and barto book for proper notation
+% TODO: in general, make sure equations are only numbered if they are referenced later!
+\begin{equation}\label{eq:reward}
+    r'(s_t, a_t) =
+    \begin{cases}
+        1,                                & \text{if goal reached} \\
+        \phi(s_t) - \phi(s_{t-1}) - 0.01, & \text{otherwise}
+    \end{cases}
+\end{equation}
+with the potential function defined as:
+\begin{equation*}
+    \phi(s) = -\frac{1}{100} \cdot d_{\text{euclidean}}(\text{agent\_pos}, \text{goal\_pos})
+\end{equation*} % ts is kinda fucked. why not apply the shaping in the last step too :(
+
+In the randomized configuration the minimum return is approximately -0.65899, while in the standard configuration it is -0.64. The maximum return in the randomized configuration is 1, while in the standard configuration it is approximately 0.96210. Calculations for these values can be found in the Appendix \ref{sec:appendix_return_calculations}. We compute the mean optimal return for the seeds 0--9,999 under the standard configuration as 0.958585. This is expected as the frequency of maps in which the agent is forced to take more than 14 steps to reach the goal is only 1.75\% among these seeds. In the randomized configuration, the mean optimal return over the seeds 0--9,999 is 0.969240, and 20.58\% of the maps are optimal with a maximum return of 1. Considering the environment is truncated at 64 timesteps, we can set the discount factor $\gamma = 1$. This makes returns more interpretable.
+
+Therefore, the MDP under this environment can be formally defined as the tuple $(\mathcal{S}, \mathcal{A}, p, r', \gamma)$, where $\mathcal{S}$ is the state space as in Equation \eqref{eq:state_space}, $\mathcal{A}$ is the action space as in Equation \eqref{eq:action_space}, $p$ is the state transition probability function defined by the environment dynamics, $r'$ is the reward function as in Equation \eqref{eq:reward}, and $\gamma$ is the discount factor set to 1.
+
+\subsection{Metrics}
+For a y-axis representing train and test risk, we use mean return over our train and test maps as a proxy for risk. Higher return indicates lower risk.
+To do this, we run an inference rollout % this is bad terminology, change wording
+on the set of training environments and the set of test environments. The set of test environments is equal in size to the set of training environments, up to a maximum of 100 test environments. Each test and train evaluation consists of running one episode on each environment in the respective set and taking the mean return across all episodes. We record this performance regularly once every 1,000 training episodes. This is our most straightforward measure of a generalization gap between training and test performance, and in this context we would look for a "Double Ascent" as the test performance initially lags behind training performance before catching up again. % TODO: inconsistent with results section--are you looking for DD or DA? be consistent with wording!!
+
+To further study generalization performance, we also measure the trace of the FIM regularly. We use the state-action pair FIM, which is defined as:
+
+\begin{equation}\label{eq:fim_definition}
+    F = \mathbb{E}_{(s,a) \sim \pi_\theta} \left[ \nabla_\theta \log \pi_\theta(a \mid s)\, \nabla_\theta \log \pi_\theta(a \mid s)^T \right]
+\end{equation}
+where $(s, a)$ are state--action pairs drawn from trajectories generated by the policy $\pi_\theta$. In other words, the FIM is the expected outer product of the gradient with respect to the model parameters $\theta$ of the score function $g = \nabla \log \pi_\theta(a \mid s)$. The FIM captures how much information about the parameters is contained in the actions taken by the policy in different states. Because of this definition, we can estimate the FIM using samples of state-action pairs sampled from trajectories.
+
+The trace of the FIM, $\text{Tr}(F)$, provides a measure of the magnitude of the FIM and thus of the sensitivity of the model's parameters to changes in the data distribution. A high trace value indicates that the model is highly sensitive to the training data, which can be a sign of overfitting or memorization. Conversely, a lower trace value suggests that the model is more robust and generalizes better to unseen data. By tracking the trace of the FIM, we can gain insights into the model's generalization capabilities and its tendency to overfit as training progresses.
+
+Using the definition of the FIM in Equation \eqref{eq:fim_definition}, we can derive an empirical estimator for the trace of the FIM without forming the full matrix using the fact that the trace of a matrix is defined as the sum of its diagonal elements (e.g. $\sum_i F_{ii}$). We can thus derive, using \cite{Petersen2008}:
+\begin{align*}
+    \text{Tr}(F) & = \text{Tr}(\mathbb{E}_{(s,a) \sim \pi_\theta} [g g^T]) \\
+    \text{Tr}(F) & = \text{Tr}(\mathbb{E}_{(s,a) \sim \pi_\theta} [g g^T]) \\
+                 & = \mathbb{E}_{(s,a) \sim \pi_\theta} [\text{Tr}(g g^T)] \\
+                 & = \mathbb{E}_{(s,a) \sim \pi_\theta} [g^T g]
+\end{align*}
+Therefore, to form a Monte Carlo estimator for the trace of the FIM, we can sample $N$ state-action pairs $(s_i, a_i)$ from trajectories generated by the policy $\pi_\theta$ and compute the score function gradients $g_i = \nabla_\theta \log \pi_\theta(a_i \mid s_i)$ for each pair. The empirical estimator for the trace of the FIM is then given by
+\begin{equation*}
+    \widehat{\text{Tr}(F)} = \frac{1}{N} \sum_{i=1}^N g_i^T g_i
+\end{equation*}
+This estimator allows us to compute the trace of the FIM efficiently without explicitly constructing the full matrix. Forming the full matrix would be prohibitively expensive for models with a large number of parameters (in the order of millions), as the FIM is of size $|\theta| \times |\theta|$ where $|\theta|$ is the number of parameters in the model.
+
+Since the trace of the FIM scales with $|\theta|$, we can compute a trace per parameter by dividing the trace by the number of parameters in the model. This allows us to compare FIM trace values across models of different sizes. Because the trace of a matrix is also the sum of its eigenvalues, the trace per parameter can also be interpreted as the average eigenvalue of the FIM. In other words, this metric can be described as the average Fisher information.
+
+Considering we would expect higher average Fisher information when the model is overfitting or memorizing the training data, we can use this metric as a complementary measure of generalization performance alongside mean return. To support findings of Double Ascent in the mean return curves, we would expect to see the mean Fisher information to correlate with the size of the generalization gap between training and test performance. As the gap emerges, we would expect the mean Fisher information of the model to increase, which would remain until the gap narrows or closes.
+
+\subsection{Models}\label{sec:models}
+We run experiments both using Deep Q-Networks (DQNs) \citep{mnih2013playingatarideepreinforcement} and using a Policy Gradient method, specifically Trust Region Policy Optimization (TRPO) \citep{schulman2017trustregionpolicyoptimization}. Both models use a feedforward neural network as function approximator. The architecture of the neural network consists of an input layer matching the size of the observation space (512 units), followed by varying numbers of hidden layers of varying width with ReLU activations, and an output layer matching the size of the action space. Training hyperparameters can be found in the Appendix \ref{sec:appendix_hyperparameters}.
+
+\subsubsection{DQNs}\label{sec:dqn} % TODO: ask what the hieroglyphics mean next to this title
+A DQN is a value-based RL algorithm that approximates the optimal action-value function $q^*(s, a)$ using a deep neural network. The action-value function estimates the expected cumulative reward for taking action $a$ in state $s$ and following the optimal policy thereafter. The DQN uses the Bellman equation as the foundation for its learning process, which states that the optimal action-value function satisfies:
+\begin{equation} % TODO: define all the variables in this equation in the preliminaries section, and also explain what the Bellman equation means
+    % TODO: get this equation for sutton and barto, make sure its 100% correct and notation is consistent
+    q^*(s_t, a_t) = \mathbb{E}_{s_{t+1}} \left[ r_t + \gamma \max_{a_{t+1}} q^*(s_{t+1}, a_{t+1}) \mid s_t, a_t \right]
+\end{equation}
+where $r_t$ is the immediate reward received after taking action $a_t$ in state $s_t$, $\gamma$ is the discount factor, and $s_{t+1}$ is the next state. The DQN approximates $q^*(s, a)$ using a neural network parameterized by a parameter vector $\theta$, denoted as $q_\theta(s, a)$. The network is trained to minimize the difference between the predicted Q-values and the target Q-values derived from the Bellman equation. The loss function $L(\theta)$ used for training the DQN is defined as:
+\begin{equation} % TODO: fix up equation. experience replay buffer needs to appear. just get the equation from sutton and barto.
+    % TODO: ask about what the handwriting here means
+    \mathbb{E}_{(s, a, r, s')} \left[ \left( r + \gamma \max_{a'} Q(s', a'; \theta^-) - q_\theta(s, a) \right)^2 \right]
+\end{equation}
+where $\theta^-$ are the parameters of a target network that is periodically updated to stabilize training. The DQN employs experience replay, where transitions $(s, a, r, s')$ are stored in a replay buffer and sampled randomly during training to break correlations between consecutive samples and improve learning stability. % TODO: I am "mixing up methods with good theory"
+
+\subsubsection{TRPO}\label{sec:trpo} % TODO: ask why this section number is circled
+TRPO is a policy gradient method that aims to optimize the policy directly while ensuring stable and monotonic improvement. TRPO achieves this by constraining the step size of policy updates using a trust region approach, which prevents large, destabilizing updates to the policy. The core idea of TRPO is to maximize a surrogate objective function subject to a constraint on the Kullback-Leibler (KL) divergence between the old and new policies. The surrogate objective function is defined as:
+
+\begin{equation} % TODO: define the advantage function in the preliminaries section
+    L(\theta) = \mathbb{E}_{s, a \sim \pi_{\theta_{\text{old}}}} \left[ \frac{\pi_\theta(a \mid s)}{\pi_{\theta_{\text{old}}}(a \mid s)} A^{\pi_{\theta_{\text{old}}}}(s, a) \right]
+\end{equation}
+
+where $\pi_{\theta_{\text{old}}}$ is the old policy, $\pi_\theta$ is the new policy parameterized by $\theta$, and $A^{\pi_{\theta_{\text{old}}}}(s, a)$ is the advantage function estimating the relative value of action $a$ in state $s$ under the old policy. The KL divergence constraint is given by:
+
+\begin{equation}
+    \mathbb{E}_{s \sim \pi_{\theta_{\text{old}}}} \left[ D_{\text{KL}}(\pi_{\theta_{\text{old}}}(\cdot \mid s) \parallel \pi_\theta(\cdot \mid s)) \right] \leq \delta
+\end{equation}
+
+where $\delta$ is a predefined threshold that limits the size of the policy update. TRPO uses a conjugate gradient algorithm to solve the constrained optimization problem efficiently. % TODO: explain what a conjugate gradient algorithm is, which one we use, and the constrained optimization problem. also explain what KL divergence is
+The policy is updated iteratively by computing the natural gradient of the surrogate objective and scaling it to satisfy the KL divergence constraint.
+
+We implement TRPO using the same feedforward neural network architecture for both the policy and the value networks. The policy network outputs logits for each action, over which we use a softmax activation function to get a distribution over the action space. The value function is approximated using a separate value network with the same architecture but with a single output unit representing the state value. The advantage function is estimated using Generalized Advantage Estimation (GAE) to reduce variance in the policy gradient estimates.
+
+\subsection{Training Runs}\label{sec:training_runs}
+To search for DD, we ran the models described above on various configurations of training environments and training durations. On the following configurations, we trained agents of varying depths between 3 and 8 and widths between 4 and 1024:
+
+
+\begin{table}[ht]
+    \centering
+    \begin{tabularx}{0.95\columnwidth}{l|c|c|X}
+        Type & Train Maps & Episodes  & Environment Configuration \\ % TODO: make sure this doesn't run over! TODO: make sure the table numbering appears correctly since it is referenced in the text
+        \hline
+        TRPO & 10         & 10,000    & Standard\footnotemark     \\
+        DQN  & 50         & 20,000    & Standard                  \\
+        DQN  & 100        & 50,000    & Standard                  \\
+        TRPO & 50         & 20,000    & Randomized                \\
+        TRPO & 100        & 50,000    & Randomized                \\
+        TRPO & 500        & 1,000,000 & Standard                  \\
+        TRPO & 750        & 1,000,000 & Standard                  \\
+        TRPO & 1,000      & 1,000,000 & Standard                  \\
+    \end{tabularx}
+    \footnotetext{Agent starts in top left, goal in bottom right}
+    \caption{Capacity Regime Configurations}
+    \label{table:runs_capacity}
+\end{table}
+
+On the following configurations, we trained agents of depth 3 and widths 4, 16, 64, 256, and 1024 for unlimited time (in practice for 1.6--1.8M episodes, until our high performance cluster ended the jobs):
+
+\begin{table}[ht]
+    \centering
+    \label{table:runs_train_time}
+    \begin{tabularx}{0.95\columnwidth}{l|c|X}
+        Type & Train Maps & Environment Configuration \\
+        \hline
+        TRPO & 50         & Standard                  \\
+        TRPO & 100        & Standard                  \\
+    \end{tabularx}
+    \caption{Episodic Regime Configurations}
+\end{table}

@@ -3,6 +3,7 @@
 \usepackage{subcaption}
 \usepackage{amsmath}
 \usepackage{tabularx}
+\usepackage{xurl}
 
 \title{\vspace{-0.5in}{\bfseries\scshape 
     On The Existence of Double Descent in Reinforcement Learning
@@ -24,18 +25,27 @@
 \twocolumn[
   \maketitle
   \begin{@twocolumnfalse}
-    \input{./tex/abstract.tex}
+    \input{./tex/0_abstract.tex}
   \end{@twocolumnfalse}
 ]
 
 \thispagestyle{firststyle}
 
-\input{tex/introduction.tex}
-\input{tex/methods.tex}
-\input{tex/results.tex}
-\input{tex/discussion.tex}
-\input{tex/limitations_future_work.tex}
-\input{tex/conclusion.tex}
+% MAIN TODOLIST
+% - discuss the weird fim trace spike in the results section, discuss what causes it and whether it is a good proxy for generalization
+% - propose experiments to further investigate the fim trace and its relationship to generalization
+% - merge discussion, limitations and conclusion into one section
+% - reread/reformat introduction
+% - consider moving preliminaries and literature review into its own "background" section
+% - one big massive re-read to ensure the storyline flows well and there is no redundant text
+
+
+\input{tex/1_introduction.tex}
+\input{tex/2_methods.tex}
+\input{tex/3_results.tex}
+\input{tex/4_discussion.tex}
+\input{tex/5_limitations_future_work.tex}
+\input{tex/6_conclusion.tex}
 
 % TODO: make sure all citations use the real place of publishing, not arxiv
 \bibliographystyle{apacite}
@@ -46,9 +56,13 @@
 \begin{appendices}
   \input{tex/appendixReturns.tex}
   \newpage
+  \input{tex/appendixTRPO.tex}
+  \newpage
   \input{tex/appendixDQN.tex}
   \newpage
   \input{tex/appendixLongRuns.tex}
+  \newpage
+  \input{tex/appendixHyperparameters.tex}
   \newpage
 \end{appendices}
 
