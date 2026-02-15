@@ -116,6 +116,49 @@
   volume    = {222},
   year      = {1922}
 }
+@article{kullback1951information,
+  author    = {S. Kullback and R. A. Leibler},
+  title     = {{On Information and Sufficiency}},
+  volume    = {22},
+  journal   = {The Annals of Mathematical Statistics},
+  number    = {1},
+  publisher = {Institute of Mathematical Statistics},
+  pages     = {79 -- 86},
+  year      = {1951},
+  doi       = {10.1214/aoms/1177729694},
+  url       = {https://doi.org/10.1214/aoms/1177729694}
+}
+
+@book{sutton1998reinforcementlearningintroduction,
+  added-at  = {2019-07-13T10:11:53.000+0200},
+  author    = {Sutton, Richard S. and Barto, Andrew G.},
+  biburl    = {https://www.bibsonomy.org/bibtex/2f46601cf8b13d39d1378af0d79438b12/lanteunis},
+  edition   = {Second},
+  interhash = {ac6b144aaec1819919a2fba9f705c852},
+  intrahash = {f46601cf8b13d39d1378af0d79438b12},
+  keywords  = {},
+  publisher = {The MIT Press},
+  timestamp = {2019-07-13T10:11:53.000+0200},
+  title     = {Reinforcement Learning: An Introduction},
+  url       = {http://incompleteideas.net/book/the-book-2nd.html},
+  year      = {2018 }
+}
+
+@book{hastie01statisticallearning,
+  added-at  = {2008-05-16T16:17:42.000+0200},
+  address   = {New York, NY, USA},
+  author    = {Hastie, Trevor and Tibshirani, Robert and Friedman, Jerome},
+  biburl    = {https://www.bibsonomy.org/bibtex/2f58afc5c9793fcc8ad8389824e57984c/sb3000},
+  interhash = {d585aea274f2b9b228fc1629bc273644},
+  intrahash = {f58afc5c9793fcc8ad8389824e57984c},
+  keywords  = {ml statistics},
+  publisher = {Springer New York Inc.},
+  series    = {Springer Series in Statistics},
+  timestamp = {2008-05-16T16:17:43.000+0200},
+  title     = {The Elements of Statistical Learning},
+  year      = 2001,
+  pages     = {221}
+}
 
 @inproceedings{kakade2001,
   author    = {Kakade, Sham M},
@@ -148,18 +191,17 @@
   year      = 2008
 }
 
-@article{LeCun2015,
-  author  = {LeCun, Yann and Bengio, Yoshua and Hinton, Geoffrey},
-  title   = {Deep learning},
-  journal = {Nature},
-  year    = {2015},
-  volume  = {521},
-  number  = {7553},
-  pages   = {436--444},
-  doi     = {10.1038/nature14539},
-  url     = {https://doi.org/10.1038/nature14539},
-  issn    = {1476-4687},
-  month   = may
+@inproceedings{lecun1989handwrittendigitrecognitionbackpropagation,
+  author    = {Le Cun, Y. and Boser, B. and Denker, J. S. and Henderson, D. and Howard, R. E. and Hubbard, W. and Jackel, L. D.},
+  title     = {Handwritten digit recognition with a back-propagation network},
+  year      = {1989},
+  publisher = {MIT Press},
+  address   = {Cambridge, MA, USA},
+  abstract  = {We present an application of back-propagation networks to handwritten digit recognition. Minimal preprocessing of the data was required, but architecture of the network was highly constrained and specifically designed for the task. The input of the network consists of normalized images of isolated digits. The method has 1\% error rate and about a 9\% reject rate on zipcode digits provided by the U.S. Postal Service.},
+  booktitle = {Proceedings of the 3rd International Conference on Neural Information Processing Systems},
+  pages     = {396–404},
+  numpages  = {9},
+  series    = {NIPS'89}
 }
 
 @misc{kingma2017adammethodstochasticoptimization,
@@ -219,7 +261,38 @@
   pages     = {141--142},
   year      = {2012},
   publisher = {IEEE}
-} 
+}
+
+@inproceedings{gunasekar2017implicitregularizationmatrixfactorization,
+  author    = {Gunasekar, Suriya and Woodworth, Blake and Bhojanapalli, Srinadh and Neyshabur, Behnam and Srebro, Nathan},
+  title     = {Implicit regularization in matrix factorization},
+  year      = {2017},
+  isbn      = {9781510860964},
+  publisher = {Curran Associates Inc.},
+  address   = {Red Hook, NY, USA},
+  abstract  = {We study implicit regularization when optimizing an underdetermined quadratic objective over a matrix X with gradient descent on a factorization of X. We conjecture and provide empirical and theoretical evidence that with small enough step sizes and initialization close enough to the origin, gradient descent on a full dimensional factorization converges to the minimum nuclear norm solution.},
+  booktitle = {Proceedings of the 31st International Conference on Neural Information Processing Systems},
+  pages     = {6152–6160},
+  numpages  = {9},
+  location  = {Long Beach, California, USA},
+  series    = {NIPS'17}
+}
+
+@inproceedings{li2018algorithmicregularizationoverparameterized,
+  title     = {Algorithmic Regularization in Over-parameterized Matrix Sensing and Neural Networks with Quadratic Activations},
+  author    = {Li, Yuanzhi and Ma, Tengyu and Zhang, Hongyang},
+  booktitle = {Proceedings of the 31st  Conference On Learning Theory},
+  pages     = {2--47},
+  year      = {2018},
+  editor    = {Bubeck, Sébastien and Perchet, Vianney and Rigollet, Philippe},
+  volume    = {75},
+  series    = {Proceedings of Machine Learning Research},
+  month     = {06--09 Jul},
+  publisher = {PMLR},
+  pdf       = {http://proceedings.mlr.press/v75/li18a/li18a.pdf},
+  url       = {https://proceedings.mlr.press/v75/li18a.html},
+  abstract  = {We show that the gradient descent algorithm provides an implicit regularization effect in the learning of over-parameterized matrix factorization models and one-hidden-layer neural networks with quadratic activations. Concretely, we show that given $\tilde{O}(dr^{2})$ random linear measurements of a rank $r$ positive semidefinite matrix $X^{\star}$, we can recover $X^{\star}$ by parameterizing it by $UU^\top$ with $U\in \mathbb R^{d\times d}$ and minimizing the squared loss, even if $r \ll d$. We prove that starting from a small initialization, gradient descent recovers $X^{\star}$ in $\tilde{O}(\sqrt{r})$ iterations approximately. The results solve the conjecture of Gunasekar et al.’17 under the restricted isometry property.  The technique can be applied to analyzing neural networks with one-hidden-layer quadratic activations with some technical modifications.}
+}
 
 @article{Spigler2019JammingTransition,
   author  = {Spigler, Stefano and Geiger, Mario and d'Ascoli, St{\'e}phane and Sagun, Levent and Biroli, Giulio and Wyart, Matthieu},
