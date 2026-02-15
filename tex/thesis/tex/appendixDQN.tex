@@ -1,35 +1,23 @@
 \section{DQNs Failing To Learn}\label{sec:DQN-fails}
-Throughout runs, DQNs failed to learn a good policy on the environment. Examples of DQN mean return and episode length during training are shown in Figure~\ref{fig:dqn_performance}. In some cases we see some initial learning, but the model seems to forget and revert to minimal return. Plotting our DQN results by capacity, we see no significant learning happening across all tested capacities, as shown in Figure~\ref{fig:dqn_capacity}.
-
-% TODO: fix up the empty space here
-\begin{figure*}[!hbtp]
+Throughout runs, DQNs failed to learn a good policy on the environment. Examples of DQN mean return and episode length during training are shown in Figures~\ref{fig:dqn_performance_1}--\ref{fig:dqn_performance_3}. In some cases we see some initial learning, but the model seems to forget and revert to minimal return. Plotting our DQN results by capacity, we see no significant learning happening across all tested capacities, as shown in Figure~\ref{fig:dqn_capacity}.
+\begin{figure}[!hbtp]
   \centering
-  \begin{subfigure}[b]{0.48\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{../images/dqn_performance.png}
-    \caption{A DQN with 3 hidden layers and 512 neurons per hidden layer, trained on 100 seeds for 50,000 episodes.}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[b]{0.48\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{../images/dqn_performance_2.png}
-    \caption{A DQN with 3 hidden layers and 512 neurons per hidden layer, trained on 50 seeds for 20,000 episodes.}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[b]{0.48\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{../images/dqn_performance_4.png}
-    \caption{A DQN with 3 hidden layers and 1024 neurons per hidden layer, trained on 100 seeds for 50,000 episodes.}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[b]{0.48\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{../images/dqn_performance_3.png}
-    \caption{A DQN with 3 hidden layers and 1024 neurons per hidden layer, trained on 50 seeds for 20,000 episodes.}
-  \end{subfigure}
-  \caption{Mean return and episode length of selected DQNs during training.}
-  \label{fig:dqn_performance}
-\end{figure*}
+  \includegraphics[width=0.45\textwidth]{../images/dqn_performance.png}
+  \caption{512 neurons per hidden layer, trained on 100 seeds for 50,000 episodes.}
+  \label{fig:dqn_performance_1}
+\end{figure}
+\begin{figure}[!hbtp]
+  \centering
+  \includegraphics[width=0.45\textwidth]{../images/dqn_performance_2.png}
+  \caption{512 neurons per hidden layer, trained on 50 seeds for 20,000 episodes.}
+  \label{fig:dqn_performance_2}
+\end{figure}
+\begin{figure}[!hbtp]
+  \centering
+  \includegraphics[width=0.45\textwidth]{../images/dqn_performance_3.png}
+  \caption{1024 neurons per hidden layer, trained on 50 seeds for 20,000 episodes.}
+  \label{fig:dqn_performance_3}
+\end{figure}
 
 \begin{figure*}[!hbtp]
   \centering

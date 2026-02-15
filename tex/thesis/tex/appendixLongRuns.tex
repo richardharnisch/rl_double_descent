@@ -1,62 +1,72 @@
-\section{Longer Training Runs}\label{sec:longer-training-runs}
-We ran long training runs for the episodic regime under TRPO for 50 and 100 train maps and model sizes with depth 3 and widths 4, 16, 64, 256, and 1024. Each model was trained for unlimited episodes. The results can be seen below.
+\section{Long Training Runs}\label{sec:longer-training-runs}
+We ran long training runs for the episodic regime under TRPO for 50 and 100 train maps and model sizes with depth 3 and widths 4, 16, 64, 256, and 1024. Each model was trained for unlimited episodes. The results can be seen in Figures~\ref{fig:50s_w4}--\ref{fig:100s_w1024}.
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{../images/50s_w4.png}
     \caption{Model width 4, train set size 50. The model is too small and fails to learn.}
+    \label{fig:50s_w4}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{../images/50s_w16.png}
     \caption{Model width 16, train set size 50.}
+    \label{fig:50s_w16}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{../images/50s_w64.png}
     \caption{Model width 64, train set size 50.}
+    \label{fig:50s_w64}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{../images/50s_w256.png}
     \caption{Model width 256, train set size 50.}
+    \label{fig:50s_w256}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{../images/50s_w1024.png}
     \caption{Model width 1024, train set size 50.}
+    \label{fig:50s_w1024}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{../images/100s_w4.png}
     \caption{Model width 4, train set size 100. The model is too small and fails to learn.}
+    \label{fig:100s_w4}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{../images/100s_w16.png}
     \caption{Model width 16, train set size 100.}
+    \label{fig:100s_w16}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{../images/100s_w64.png}
     \caption{Model width 64, train set size 100.}
+    \label{fig:100s_w64}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{../images/100s_w256.png}
     \caption{Model width 256, train set size 100.}
+    \label{fig:100s_w256}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{../images/100s_w1024.png}
     \caption{Model width 1024, train set size 100.}
+    \label{fig:100s_w1024}
 \end{figure}
