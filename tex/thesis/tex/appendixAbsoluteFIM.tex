@@ -1,0 +1,25 @@
+\section{Plotting the Absolute FIM Trace}\label{sec:appendix_absolute_fim}
+To investigate why the average Fisher information trace exhibits a spike during training, we plot the absolute value of the trace across training steps for TRPO models of varying capacity trained for 1,000,000 episodes on 500, 750 and 1,000 train maps, shown in \ref{fig:absolute_fim}. We observe the observed spike remains in the absolute FIM trace.
+
+\begin{figure*}[!hbtp]
+    \centering
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../images/fim_500s_1M.png}
+        \caption{500 train maps.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../images/fim_750s_1M.png}
+        \caption{750 train maps.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../images/fim_1000s_1M.png}
+        \caption{1,000 train maps.}
+    \end{subfigure}
+    \caption{}
+    \label{fig:absolute_fim}
+\end{figure*}

@@ -37,8 +37,9 @@
 % - merge discussion, limitations and conclusion into one section
 % - ensure all the math in the methods section is correct
 % - reread/reformat introduction
-% - unify DD/DA terminology
+% - unify DD/DA terminology, optimal/maximal
 % - consider moving preliminaries and literature review into its own "background" section
+% - sort appendices by order of appearance in the main text
 % - one big massive re-read to ensure the storyline flows well and there is no redundant text
 
 
@@ -46,8 +47,8 @@
 \input{tex/2_methods.tex}
 \input{tex/3_results.tex}
 \input{tex/4_discussion.tex}
-\input{tex/5_limitations_future_work.tex}
-\input{tex/6_conclusion.tex}
+% \input{tex/5_limitations_future_work.tex}
+% \input{tex/6_conclusion.tex}
 
 % TODO: make sure all citations use the real place of publishing, not arxiv
 \bibliographystyle{apacite}
@@ -58,13 +59,15 @@
 \begin{appendices}
   \input{tex/appendixReturns.tex}
   \newpage
-  \input{tex/appendixTRPO.tex}
+  \input{tex/appendixHyperparameters.tex}
   \newpage
   \input{tex/appendixDQN.tex}
   \newpage
-  \input{tex/appendixLongRuns.tex}
+  \input{tex/appendixTRPO.tex}
   \newpage
-  \input{tex/appendixHyperparameters.tex}
+  \input{tex/appendixAbsoluteFIM.tex}
+  \newpage
+  \input{tex/appendixLongRuns.tex}
   \newpage
 \end{appendices}
 
