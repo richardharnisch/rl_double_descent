@@ -1,7 +1,7 @@
 # DQN Double Descent in Seeded Gridworlds
 
-This repo is a minimal, reproducible setup for probing double descent in RL.
-We train a DQN on a small set of seeded environments (e.g., seeds 1-5) and
+This repo is a reproducible setup for probing double descent in RL.
+We train a DQN/TRPO on a set of seeded gridworld environments (e.g., seeds 1-5) and
 evaluate on unseen seeds. We then sweep model sizes to observe performance
 curves as parameter count increases.
 
