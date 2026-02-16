@@ -82,10 +82,11 @@ Therefore, to form a Monte Carlo estimator for the trace of the FIM, we can samp
 \begin{equation*}
     \widehat{\text{Tr}(F)} = \frac{1}{N} \sum_{i=1}^N g_i^T g_i
 \end{equation*}
-This estimator allows us to compute the trace of the FIM efficiently without explicitly constructing the full matrix. Forming the full matrix would be prohibitively expensive for models with a large number of parameters (in the order of millions), as the FIM is of size $|\theta|^2$, where $|\theta|$ is the number of parameters in the model. Since the trace of the FIM scales with $|\theta|$, we can compute a trace per parameter by dividing the trace by the number of parameters in the model. This allows us to compare FIM trace values across models of different sizes. Because the trace of a matrix is also the sum of its eigenvalues, the trace per parameter can also be interpreted as the average eigenvalue of the FIM. In other words, this metric can be described as the average Fisher information. % just say we call this the avg FI?
+This estimator allows us to compute the trace of the FIM efficiently without explicitly constructing the full matrix. Forming the full matrix would be prohibitively expensive for models with a large number of parameters (in the order of millions), as the FIM is of size $|\theta|^2$, where $|\theta|$ is the number of parameters in the model. Since the trace of the FIM scales with $|\theta|$, we can compute a trace per parameter by dividing the trace by the number of parameters in the model. This allows us to compare FIM trace values across models of different sizes. Because the trace of a matrix is also the sum of its eigenvalues, the trace per parameter can also be interpreted as the average eigenvalue of the FIM. We call this metric the average Fisher information. % just say we call this the avg FI?
 
-Considering we would expect higher average Fisher information when the model is overfitting or memorizing the training data, we can use this metric as a complementary measure of generalization capacity alongside mean return. % todo: nils: citation or justification is necessary
-To support findings of DD in the mean return curves, we would expect to see the mean Fisher information to correlate with the size of the generalization gap between training and test returns. As the gap emerges, we would expect the mean Fisher information of the model to increase, which would remain until the gap narrows or closes. % todo: if possible, find some citations where this has been used before
+Considering we would expect higher average Fisher information when the model is overfitting or memorizing the training data, we can use this metric as a complementary measure of generalization capacity alongside mean return. To support findings of DD in the mean return curves, we would expect to see the mean Fisher information to correlate with the size of the generalization gap between training and test returns. As the gap emerges, we would expect the mean Fisher information of the model to increase, which would remain until the gap narrows or closes.
+
+The use of the FIM trace as a diagnostic signal for generalization capacity is motivated by recent work. \cite{Jastrzebski2020CatastrophicFE} show in the SL case that the trace of the FIM correlates with final generalization performance in deep networks trained with stochastic gradient descent, and that a large $\text{Tr}(F)$ early in training, which they term catastrophic Fisher explosion, coincides with overfitting and poor test accuracy. They further demonstrate that explicitly regularizing $\text{Tr}(F)$ recovers generalization, providing evidence that $\text{Tr}(F)$ is not merely correlated with but causally linked to generalization behavior. \cite{falzari2025fisherguidedselectiveforgettingmitigating} propose characterizing the primacy bias in deep RL through the evolution of the FIM trace, identifying a memorization phase marked by a sharp spike followed by a reorganization phase featuring a decline despite continued performance improvement. The authors interpret a high FIM trace magnitude as associated with poor generalization, and use its evolution to detect when early experiences disproportionately dominate learning. \cite{todorov2025sparsitydrivenplasticitymultitaskreinforcement} similarly track the FIM trace as a plasticity indicator in multi-task RL, observing that agents converging to less sensitive parameter configurations exhibit lower and more stable trace values post-training, and that sparsification methods which improve generalization tend to reduce or stabilize the FIM trace.
 
 \subsection{Models}\label{sec:models}
 We run experiments both using DQNs \citep{Mnih2015} and using a Policy Gradient method, specifically TRPO \citep{schulman2017trustregionpolicyoptimization}. % todo: nils says i should introduce these two and their citation earlier
@@ -126,9 +127,7 @@ where $\delta$ is a predefined threshold that limits the size of the policy upda
 We implement TRPO using the same feedforward neural network architecture for both the policy and the value networks. The policy network outputs logits for each action, over which we use a softmax activation function to get a distribution over the action space. The value function is approximated using a separate value network with the same architecture but with a single output unit representing the state value. The advantage function is estimated using Generalized Advantage Estimation (GAE) to reduce variance in the policy gradient estimates.
 
 \subsection{Training Runs}\label{sec:training_runs}
-To search for DD, we ran the models described above on various configurations of training environments and training durations. On the following configurations, we trained agents of varying depths between 3 and 8 and widths between 4 and 1024:
-
-
+To search for DD, we ran the models described above on various configurations of training environments and training durations. On the configurations shown in Table \ref{table:runs_capacity}, we trained agents of varying depths between 3 and 8 and widths between 4 and 1024. On the configurations shown in table \ref{table:runs_episodic}, we trained agents of depth 3 and widths 4, 16, 64, 256, and 1024 for unlimited time (in practice for 1.6--1.8M episodes, until our high performance cluster ended the jobs).
 \begin{table}[ht]
     \centering
     \begin{tabularx}{0.95\columnwidth}{l|c|c|X}
@@ -139,6 +138,7 @@ To search for DD, we ran the models described above on various configurations of
         DQN  & 100        & 50,000    & Standard                  \\
         TRPO & 50         & 20,000    & Randomized                \\
         TRPO & 100        & 50,000    & Randomized                \\
+        TRPO & 100        & 1,000,000 & Standard                  \\
         TRPO & 500        & 1,000,000 & Standard                  \\
         TRPO & 750        & 1,000,000 & Standard                  \\
         TRPO & 1,000      & 1,000,000 & Standard                  \\
@@ -147,9 +147,6 @@ To search for DD, we ran the models described above on various configurations of
     \caption{Capacity Regime Configurations}
     \label{table:runs_capacity}
 \end{table}
-
-On the following configurations, we trained agents of depth 3 and widths 4, 16, 64, 256, and 1024 for unlimited time (in practice for 1.6--1.8M episodes, until our high performance cluster ended the jobs):
-
 \begin{table}[ht]
     \centering
     \begin{tabularx}{0.95\columnwidth}{l|c|X}
@@ -158,4 +155,6 @@ On the following configurations, we trained agents of depth 3 and widths 4, 16, 
         TRPO & 50         & Standard                  \\
         TRPO & 100        & Standard                  \\
     \end{tabularx}
+    \caption{Episodic Regime Configurations}
+    \label{table:runs_episodic}
 \end{table}

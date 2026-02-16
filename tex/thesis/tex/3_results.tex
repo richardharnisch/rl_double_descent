@@ -9,25 +9,25 @@ We next examined generalization capacity using TRPO. This architecture was able 
 
 \subsubsection{Capacity Regime}
 \begin{figure*}[!hbtp]
+  \centering
+  \begin{minipage}{0.32\textwidth}
     \centering
-    \begin{minipage}{0.32\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{../images/10seed_10k.png}
-        \caption{Trained on 10 maps for 10,000 episodes.}
-        \label{fig:trpo_capacity_10seed}
-    \end{minipage}\hfill
-    \begin{minipage}{0.32\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{../images/500seed_1M.png}
-        \caption{Trained on 500 maps for 1,000,000 episodes.}
-        \label{fig:trpo_capacity_500seed}
-    \end{minipage}\hfill
-    \begin{minipage}{0.32\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{../images/50seed_randcorner_20k.png}
-        \caption{Trained on 50 maps for 20,000 episodes with randomized start and goal positions.}
-        \label{fig:50seed_20k_random}
-    \end{minipage}\hfill
+    \includegraphics[width=\linewidth]{../images/10seed_10k.png}
+    \caption{Trained on 10 maps for 10,000 episodes.}
+    \label{fig:trpo_capacity_10seed}
+  \end{minipage}\hfill
+  \begin{minipage}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{../images/500seed_1M.png}
+    \caption{Trained on 500 maps for 1,000,000 episodes.}
+    \label{fig:trpo_capacity_500seed}
+  \end{minipage}\hfill
+  \begin{minipage}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{../images/50seed_randcorner_20k.png}
+    \caption{Trained on 50 maps for 20,000 episodes with randomized start and goal positions.}
+    \label{fig:50seed_20k_random}
+  \end{minipage}\hfill
 \end{figure*}
 In the capacity regime, we conducted studies to heuristically search the available hyperparameter space. Our two hyperparameters to calibrate here are size of the train set (in seeds) and amount of training steps (in episodes). We varied both hyperparameters across a range of values, as shown in Table~\ref{table:runs_capacity}. To plot the mean returns, we normalize by using the mean minimal and optimal returns across the seeds used for the specific configuration to scale the returns between 0 and 1, enabling comparisons between different environment configurations.
 First, we used 10 train maps and 10,000 training episodes per model, with the standard environment configuration. We can observe that both training and test returns are both low for the smallest model capacities. As we increase model capacity, training return increases rapidly until it reaches the mean maximum return. Test return increases slightly but stabilizes quickly at about 10\% of mean maximum return. No second rise is observed in the test return when increasing model capacity, and thus we cannot observe DD. At the same time, we observe a spike in the average Fisher information as the gap in mean return on the train and test set emerges, which subsides again as model capacity increases further. Figure~\ref{fig:trpo_capacity_10seed} shows the results of this experiment. Considering the minimal improvement in test return, we increased the train set size as well as the training episodes. We tested a train set size of 50 seeds and 20,000 training episodes, a train set size of 100 train maps and 50,000 episodes, and a train set size of 1,000 maps and 100,000 episodes. Here, we can observe similar results, with slightly improved test return after the first rise to about 0.2 of mean maximum return for 50 train maps and about 0.4 for 100 train maps. The training return decreases with larger amounts of train maps, with mean return keeping around 0.8 for 50 train maps and 0.7 for 100 train maps. In these two configurations, no DD can be observed as the generalization gap does not close when increasing model capacity. As before, the average Fisher information again spikes as the train and test return diverges, but again decreases as model capacity increases further. When using 1,000 train maps, the train and test remain approximately equal and no generalization gap emerges at all, with both train and test return stabilizing at about 0.4 of mean maximum return.
@@ -49,11 +49,11 @@ If these hypotheses are accurate, this questions the usefulness of the average F
 
 \subsection{Episodic Regime}\label{sec:episodic_regime}
 \begin{figure}[!hbtp]
-    \centering
-    \includegraphics[width=\linewidth]{../images/100s_w1024.png}
-    \caption{TRPO training and test return over time for a model of width 1024 and depth 3, using 100 train maps and unlimited training episodes.}
-    \label{fig:100seed_unlim_1024}
+  \centering
+  \includegraphics[width=\linewidth]{../images/100s_w1024.png}
+  \caption{TRPO training and test return over time for a model of width 1024 and depth 3, using 100 train maps and unlimited training episodes.}
+  \label{fig:100seed_unlim_1024}
 \end{figure}
 DD can also occur with respect to the amount of optimization steps taken during training, which we refer to as the episodic regime. To test whether this regime exhibits DD under our conditions, we trained models of depth 3 and widths 4, 16, 64, 256, and 1024 on two configurations: 50 train maps and 100 train maps. Figure~\ref{fig:100seed_unlim_1024} shows an example of the learning behavior during training. We trained without a limit on the number of training episodes, but in practice were limited to about 1.6M to 1.8M episodes until our high performance cluster ended the jobs. The remaining configurations exhibited similar behavior, except for the smallest models of width 4, which failed to learn the environment at all. These plots can be found in Appendix~\ref{sec:longer-training-runs}.
 
-Again, the results do not exhibit signs of DD. We can observe a quick increase in train return at the beginning, barely visible due to the scale of the graph. After this initial increase, training return stays at a near-optimal level. The difference to the optimal level indicates that the model fails to solve a small number of maps or learned a suboptimal policy on maps it can solve. Test return also increases quickly at the beginning and stabilizes at a low level between 0.2 and 0.4 for the tested configurations. However, we can observe a very slight downward trend in test return over time, indicating that the model may be overfitting slightly to the train set. However, no second rise is observed in the test return within our training time, and thus no DD phenomenon. % TODO: rephrase last sentence, clarify DD vs DA
+Again, the results do not exhibit signs of DD. We can observe a quick increase in train return at the beginning, barely visible due to the scale of the graph. After this initial increase, training return stays at a near-optimal level. The difference to the optimal level indicates that the model fails to solve a small number of maps or learned a suboptimal policy on maps it can solve. Test return also increases quickly at the beginning and stabilizes at a low level between 0.2 and 0.4 for the tested configurations. However, we can observe a very slight downward trend in test return over time, indicating that the model may be overfitting slightly to the train set. However, no second rise is observed in the test return within our training time, and thus no DD phenomenon.
