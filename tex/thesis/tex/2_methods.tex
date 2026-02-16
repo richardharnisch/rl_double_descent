@@ -9,25 +9,29 @@ One episode of interaction with the environment is defined as a sequence of stat
     v_{\pi}(s) = \sum_{a} \pi(a \mid s) \sum_{s', r} p(s', r \mid s, a) \left[ r + \gamma v_{\pi}(s') \right]
 \end{equation*}
 and the action-value function is given by
-\begin{equation*}
-    q_{\pi}(s,a) = \sum_{s', r} p(s', r \mid s, a) \left[ r + \gamma \sum_{a'} \pi(a' \mid s') q_{\pi}(s', a') \right].
-\end{equation*}
+\begin{align*}
+    q_{\pi}(s,a) & = \sum_{s', r} p(s', r \mid s, a)                                          \\
+                 & \quad \left[ r + \gamma \sum_{a'} \pi(a' \mid s') q_{\pi}(s', a') \right].
+\end{align*}
 \subsection{Environment}\label{sec:environment}
 As an analogue to train/test splits in SL, we create a family of gridworld-like maze environments randomly generated based on a seed, implemented as a subclass of the \texttt{gymnasium} \texttt{Env} class \citep{towers2024gymnasium}. Each environment in this family shares the same underlying structure (e.g., state and action space, transition dynamics, reward structure) but differs in its layout. By training an agent on a subset of these environments (the train split) and evaluating its returns on a separate subset of unseen environments (the test split), we can emulate the train-test paradigm from SL. Each map is contained in an $8\times 8$ grid, with the agent and the goal each taking up one tile. Tiles not occupied by the agent or the goal at game start are either empty or walls. Whether a tile is a wall is determined randomly during map generation, with a fixed probability of 0.2 for each tile to be a wall. This yields the possibility of generating maps that are unsolvable (i.e., there is no path from the agent to the goal). Such maps are discarded during generation and re-generated to ensure solvability. The position of the goal and starting position of the agent can be randomized or set deterministically. In the deterministic setting, the goal is always placed in the bottom-right corner of the map (coordinates (7,7)) and the agent always starts in the top-left corner (coordinates (0,0)). In the randomized setting, both the agent's starting position and the goal position are randomized to one of the corners of the map at the start of each episode. Two example maps can be seen in Figure~\ref{fig:example_envs}.
 \begin{figure}[!t]
     \centering
-    \begin{subfigure}[b]{0.2\textwidth}
-        \centering
-        \fbox{\includegraphics[width=\textwidth]{../images/env_standard.png}}
-        \caption{Standard configuration.}
-        \label{fig:env1}
-    \end{subfigure}\hfill
-    \begin{subfigure}[b]{0.2\textwidth}
-        \centering
-        \fbox{\includegraphics[width=\textwidth]{../images/env_random.png}}
-        \caption{Randomized configuration.}
-        \label{fig:env3}
-    \end{subfigure}
+    % for some reason it goes over the margin if i don't limit it below full column width
+    \makebox[0.95\columnwidth][c]{%
+        \begin{subfigure}[b]{0.2\textwidth}
+            \centering
+            \fbox{\includegraphics[width=\textwidth]{../images/env_standard.png}}
+            \caption{Standard configuration.}
+            \label{fig:env1}
+        \end{subfigure}\hfill
+        \begin{subfigure}[b]{0.2\textwidth}
+            \centering
+            \fbox{\includegraphics[width=\textwidth]{../images/env_random.png}}
+            \caption{Randomized configuration.}
+            \label{fig:env3}
+        \end{subfigure}
+    }
     \caption{Example environments. Walls are shown in black, the agent in blue, and the goal in green.}
     \label{fig:example_envs}
 \end{figure}
