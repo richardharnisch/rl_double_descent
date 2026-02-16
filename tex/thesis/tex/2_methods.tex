@@ -38,13 +38,14 @@ The action space is discrete and allows for moving in the four cardinal directio
     \mathcal{A} = \{\text{up}, \text{down}, \text{left}, \text{right}\}.
 \end{equation}
 $p(s_{t+1} | s_t, a_t)$ is deterministic and always results in moving in the specified direction if it is accessible. If it is a wall or out of bounds, the agent does not move and $s_{t+1} = s_t$. The agent receives a reward of $+1$ upon reaching the goal. In all other timesteps, a small time penalty is applied together with potential based reward shaping based on the Euclidean distance to the goal:
-\begin{equation}\label{eq:reward} % todo: make sure the equation doesn't run over margins. also, make sure the notation is correct (t+1 or t-1?)
-    r'(s_t, a_t) =
-    \begin{cases}
-        1,                                              & \text{if goal reached} \\
-        \gamma \times \phi(s_{t+1}) - \phi(s_t) - 0.01, & \text{otherwise}
-    \end{cases}
-\end{equation}
+% todo: make sure the notation is correct (t+1 or t-1?)
+\begin{align}\label{eq:reward}
+    r'(s_t, a_t) & = \notag                                                         \\
+                 & \begin{cases}
+                       1,                                      & \text{if goal reached} \\
+                       \gamma\phi(s_{t+1}) - \phi(s_t) - 0.01, & \text{otherwise}
+                   \end{cases}
+\end{align}
 with the potential function defined as:
 \begin{equation*}
     \phi(s) = -\frac{1}{100} \cdot d_{\text{Euclidean}}(\text{agent\_pos}, \text{goal\_pos}).
@@ -92,9 +93,10 @@ A DQN is a value-based RL algorithm that approximates the optimal action-value f
 \end{equation}
 where $r_t$ is the immediate reward received after taking action $a_t$ in state $s_t$, $\gamma$ is the discount factor, and $s_{t+1}$ is the next state. The DQN approximates $q^*(s, a)$ using a neural network parameterized by a parameter vector $\theta$, denoted as $q_\theta(s, a)$. The network is trained to minimize the difference between the predicted Q-values and the target Q-values derived from the Bellman equation. The loss function $L(\theta)$ used for training the DQN is defined as:
 % TODO: fix up equation. experience replay buffer needs to appear. **get the equation from sutton and barto**!! also, ensure it doesn't run over the margin
-\begin{equation}
-    L(\theta) = \mathbb{E}_{(s, a, r, s')} \left[ \left( r + \gamma \max_{a'} Q(s', a'; \theta^-) - q_\theta(s, a) \right)^2 \right]
-\end{equation}
+\begin{align}
+    L(\theta) & = \mathbb{E}_{(s, a, r, s')} \notag                                                             \\
+              & \quad \left[ \left( r + \gamma \max_{a'} Q(s', a'; \theta^-) - q_\theta(s, a) \right)^2 \right]
+\end{align}
 where $\theta^-$ are the parameters of a target network that is periodically updated to stabilize training. The DQN employs experience replay, where transitions $(s, a, r, s')$ are stored in a replay buffer and sampled randomly during training to break correlations between consecutive samples and improve learning stability. % TODO: I am "mixing up methods with good theory"
 
 \subsubsection{TRPO}\label{sec:trpo} % TODO: ask why this section number is circled
