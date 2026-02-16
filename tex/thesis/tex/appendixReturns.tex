@@ -13,7 +13,7 @@ To calculate the minimum reward on the standard configuration, we assume the age
     G_{min} & = -0.01\times 64 \\
             & = -0.64
 \end{align*}
-The maximum reward in the randomized configuration is achieved if the agent starts in the corner adjacent to the corner of the goal tile and reaches the goal by moving directly to the goal without having to move around any obstacles. In this case, the agent needs 7 time steps to reach the goal. The time penalty and reward shaping are not applied in the time step in which the agent reaches the goal, so the reward can be calculated as follows:
+The maximum reward in the randomized configuration is achieved if the agent starts in the corner adjacent to the corner of the goal tile and reaches the goal by moving directly to the goal without having to move around any walls. In this case, the agent needs 7 time steps to reach the goal. The time penalty and reward shaping are not applied in the time step in which the agent reaches the goal, so the reward can be calculated as follows:
 \begin{align*}
     G_{max} & = (-0.01\times 6) - \frac{1}{100}\times(1 - d_{\text{start}}) + 1 \\
     G_{max} & = -0.06 - \frac{1}{100}\times(1 - 7) + 1                          \\
