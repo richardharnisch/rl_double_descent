@@ -8,9 +8,7 @@ curves as parameter count increases.
 ## Setup (uv)
 
 ```bash
-uv venv
-source .venv/bin/activate
-uv pip install -e .
+uv sync
 ```
 
 ## Run an experiment
@@ -18,7 +16,7 @@ uv pip install -e .
 Example sweep with a 2-layer MLP and width sweep:
 
 ```bash
-python -m rl_dd.experiment \
+uv run python -m rl_dd.experiment \
   --train-seeds 1-25 \
   --test-seeds 26-30 \
   --widths 16,32,64,128,256 \
@@ -48,7 +46,7 @@ This also logs:
 Disable FIM if needed:
 
 ```bash
-python -m rl_dd.experiment --fim-samples 0
+uv run python -m rl_dd.experiment --fim-samples 0
 ```
 
 ## Parameters (in depth)
@@ -64,11 +62,13 @@ Model size
 - `--base-seed` (default: `0`): Base RNG seed for runs; run `k` uses `base_seed + k` for all RNGs.
 - `--run-id` (default: unset): Force a single run index (use with `--runs 1`) so array jobs can map distinct seeds to distinct runs.
 - `--algo` (default: `dqn`): Algorithm choice (`dqn` or `trpo`). DQN-specific flags are ignored when using TRPO.
+- `--arch` (default: `mlp`): Network architecture (`mlp` or `cnn`). For `cnn`, `--widths` controls conv channels and `--depths` controls the number of conv layers.
 
 Environment
 - `--grid-size` (default: `8`): Square grid side length. Observation uses a per-tile one-hot encoding (4 channels) and is flattened. Also has 2-frame stacking.
 - `--obstacle-prob` (default: `0.2`): Bernoulli probability of a wall in each cell (except start/goal). Maps are regenerated per seed until solvable.
 - `--max-steps` (default: `64`): Maximum steps per episode before truncation (applies to training, eval, and video rollouts).
+- `--frame-stack` (default: `2`): Number of consecutive one-hot grid observations concatenated into the flattened observation.
 - `--start` (default: unset): Start corner index (0=top-left, 1=top-right, 2=bottom-right, 3=bottom-left). Unset means randomized.
 - `--end` (default: unset): Goal corner index (0=top-left, 1=top-right, 2=bottom-right, 3=bottom-left). Unset means randomized.
 When one of `--start` or `--end` is unset, the other is sampled from the remaining corners; if both are unset, both corners are randomized (but always different).

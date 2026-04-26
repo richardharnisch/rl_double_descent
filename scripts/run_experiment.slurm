@@ -19,22 +19,30 @@ cd "$PROJECT_ROOT"
 
 mkdir -p slurm results
 
-eval "$(conda shell.bash hook)"
-source .venv/bin/activate
+PYTHON=(uv run --no-sync python)
 
-WIDTHS=(4 16 64 256 1024)
+ARCH="cnn"
+GRID_SIZE=16
+MAX_STEPS=256
+WIDTHS=(4 8 16 32 64 128 256)
 DEPTHS=(3)
 RUNS=3
-LOG_DIR="results/500seed_250k"
+TRAIN_SEEDS="1-100"
+TEST_SEEDS="101-200"
+EPISODES=250000
+LOG_EVERY=5000
+LOG_DIR="results/cnn_16x16_100seed_250k"
 
 if [[ "${1:-}" == "--collect-only" ]]; then
-  python -m rl_dd.experiment \
+  uv sync
+  "${PYTHON[@]}" -m rl_dd.experiment \
     --log-dir "${LOG_DIR}" \
     --collect-only
   exit 0
 fi
 
 if [[ -z "${SLURM_ARRAY_TASK_ID:-}" ]]; then
+  uv sync
   TOTAL_TASKS=$(( ${#WIDTHS[@]} * ${#DEPTHS[@]} * RUNS ))
   ARRAY_JOB_ID=$(sbatch --parsable --array=0-$((TOTAL_TASKS - 1)) "$0")
   sbatch --dependency=afterok:"${ARRAY_JOB_ID}" "$0" --collect-only
@@ -51,18 +59,21 @@ DEPTH_INDEX=$((PAIR_ID / ${#WIDTHS[@]}))
 WIDTH="${WIDTHS[$WIDTH_INDEX]}"
 DEPTH="${DEPTHS[$DEPTH_INDEX]}"
 
-python -m rl_dd.experiment \
+"${PYTHON[@]}" -m rl_dd.experiment \
   --algo trpo \
+  --arch "${ARCH}" \
+  --grid-size "${GRID_SIZE}" \
+  --max-steps "${MAX_STEPS}" \
   --depths "${DEPTH}" \
-  --train-seeds 1-500 \
-  --test-seeds 501-1000 \
+  --train-seeds "${TRAIN_SEEDS}" \
+  --test-seeds "${TEST_SEEDS}" \
   --runs 1 \
   --run-id "${RUN_ID}" \
-  --episodes 250000 \
+  --episodes "${EPISODES}" \
   --video-fps 12 \
   --early-stop-episodes 0 \
   --start 0 \
   --end 2 \
   --log-dir "${LOG_DIR}" \
   --widths "${WIDTH}" \
-  --log-every 1000
+  --log-every "${LOG_EVERY}"

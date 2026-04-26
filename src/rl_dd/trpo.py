@@ -8,6 +8,8 @@ import torch
 from torch import nn
 from torch.distributions import Categorical
 
+from rl_dd.cnn import CNNFeatureExtractor
+
 
 class PolicyNetwork(nn.Module):
     def __init__(
@@ -43,6 +45,49 @@ class ValueNetwork(nn.Module):
         return self.model(x).squeeze(-1)
 
 
+class CNNPolicyNetwork(nn.Module):
+    def __init__(
+        self,
+        input_dim: int,
+        action_dim: int,
+        hidden_channels: Iterable[int],
+        grid_size: int,
+        frame_stack: int,
+    ) -> None:
+        super().__init__()
+        self.features = CNNFeatureExtractor(
+            input_dim,
+            hidden_channels,
+            grid_size=grid_size,
+            frame_stack=frame_stack,
+        )
+        self.head = nn.Linear(self.features.output_dim, action_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.head(self.features(x))
+
+
+class CNNValueNetwork(nn.Module):
+    def __init__(
+        self,
+        input_dim: int,
+        hidden_channels: Iterable[int],
+        grid_size: int,
+        frame_stack: int,
+    ) -> None:
+        super().__init__()
+        self.features = CNNFeatureExtractor(
+            input_dim,
+            hidden_channels,
+            grid_size=grid_size,
+            frame_stack=frame_stack,
+        )
+        self.head = nn.Linear(self.features.output_dim, 1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.head(self.features(x)).squeeze(-1)
+
+
 @dataclass
 class TRPOConfig:
     episodes: int = 2000
@@ -62,22 +107,56 @@ class TRPOConfig:
 
 
 def build_policy(
-    input_dim: int, action_dim: int, hidden_sizes: Iterable[int], device: torch.device
-) -> PolicyNetwork:
-    net = PolicyNetwork(input_dim, action_dim, hidden_sizes)
+    input_dim: int,
+    action_dim: int,
+    hidden_sizes: Iterable[int],
+    device: torch.device,
+    *,
+    arch: str = "mlp",
+    grid_size: int = 8,
+    frame_stack: int = 2,
+) -> nn.Module:
+    if arch == "cnn":
+        net = CNNPolicyNetwork(
+            input_dim,
+            action_dim,
+            hidden_sizes,
+            grid_size=grid_size,
+            frame_stack=frame_stack,
+        )
+    elif arch == "mlp":
+        net = PolicyNetwork(input_dim, action_dim, hidden_sizes)
+    else:
+        raise ValueError(f"Unknown architecture: {arch}")
     return net.to(device)
 
 
 def build_value(
-    input_dim: int, hidden_sizes: Iterable[int], device: torch.device
-) -> ValueNetwork:
-    net = ValueNetwork(input_dim, hidden_sizes)
+    input_dim: int,
+    hidden_sizes: Iterable[int],
+    device: torch.device,
+    *,
+    arch: str = "mlp",
+    grid_size: int = 8,
+    frame_stack: int = 2,
+) -> nn.Module:
+    if arch == "cnn":
+        net = CNNValueNetwork(
+            input_dim,
+            hidden_sizes,
+            grid_size=grid_size,
+            frame_stack=frame_stack,
+        )
+    elif arch == "mlp":
+        net = ValueNetwork(input_dim, hidden_sizes)
+    else:
+        raise ValueError(f"Unknown architecture: {arch}")
     return net.to(device)
 
 
 def evaluate_policy(
     env,
-    policy_net: PolicyNetwork,
+    policy_net: nn.Module,
     seeds: Iterable[int],
     episodes_per_seed: int,
     device: torch.device,
@@ -163,8 +242,8 @@ def _compute_gae(
 
 def train_trpo(
     env,
-    policy_net: PolicyNetwork,
-    value_net: ValueNetwork,
+    policy_net: nn.Module,
+    value_net: nn.Module,
     train_seeds: Iterable[int],
     config: TRPOConfig,
     device: torch.device,

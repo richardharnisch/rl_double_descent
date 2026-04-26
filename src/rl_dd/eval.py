@@ -93,16 +93,35 @@ def infer_arch(model_path: Path) -> Optional[Tuple[int, int]]:
 
 def build_model(
     algo: str,
+    arch: str,
     obs_dim: int,
     action_dim: int,
     width: int,
     depth: int,
+    grid_size: int,
+    frame_stack: int,
     device: torch.device,
 ) -> torch.nn.Module:
     hidden_sizes = [width for _ in range(depth)]
     if algo == "trpo":
-        return build_policy(obs_dim, action_dim, hidden_sizes, device)
-    return build_network(obs_dim, action_dim, hidden_sizes, device)
+        return build_policy(
+            obs_dim,
+            action_dim,
+            hidden_sizes,
+            device,
+            arch=arch,
+            grid_size=grid_size,
+            frame_stack=frame_stack,
+        )
+    return build_network(
+        obs_dim,
+        action_dim,
+        hidden_sizes,
+        device,
+        arch=arch,
+        grid_size=grid_size,
+        frame_stack=frame_stack,
+    )
 
 
 def main() -> None:
@@ -110,6 +129,7 @@ def main() -> None:
         description="Evaluate a saved model on seeded maps."
     )
     parser.add_argument("--algo", choices=["dqn", "trpo"], default="dqn")
+    parser.add_argument("--arch", choices=["mlp", "cnn"], default="mlp")
     parser.add_argument("--model-path", required=True)
     parser.add_argument("--seeds", required=True)
     parser.add_argument("--out-dir", required=True)
@@ -155,7 +175,17 @@ def main() -> None:
     obs_dim = env.observation_space.shape[0]
     action_dim = env.action_space.n
 
-    model = build_model(args.algo, obs_dim, action_dim, args.width, args.depth, device)
+    model = build_model(
+        args.algo,
+        args.arch,
+        obs_dim,
+        action_dim,
+        args.width,
+        args.depth,
+        args.grid_size,
+        args.frame_stack,
+        device,
+    )
     state = torch.load(model_path, map_location=device)
     model.load_state_dict(state)
 

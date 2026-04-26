@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from rl_dd.dqn import QNetwork, ReplayBuffer
+from rl_dd.dqn import CNNQNetwork, QNetwork, ReplayBuffer
 
 
 @dataclass
@@ -49,8 +49,8 @@ def linear_epsilon(step: int, start: float, end: float, decay_steps: int) -> flo
 
 def train_dqn(
     env,
-    q_net: QNetwork,
-    target_net: QNetwork,
+    q_net: nn.Module,
+    target_net: nn.Module,
     optimizer: torch.optim.Optimizer,
     buffer: ReplayBuffer,
     train_seeds: Iterable[int],
@@ -150,7 +150,7 @@ def train_dqn(
 
 def evaluate_policy(
     env,
-    q_net: QNetwork,
+    q_net: nn.Module,
     seeds: Iterable[int],
     episodes_per_seed: int,
     device: torch.device,
@@ -182,8 +182,23 @@ def build_network(
     action_dim: int,
     hidden_sizes: Iterable[int],
     device: torch.device,
-) -> QNetwork:
-    net = QNetwork(input_dim, action_dim, hidden_sizes)
+    *,
+    arch: str = "mlp",
+    grid_size: int = 8,
+    frame_stack: int = 2,
+) -> nn.Module:
+    if arch == "cnn":
+        net = CNNQNetwork(
+            input_dim,
+            action_dim,
+            hidden_sizes,
+            grid_size=grid_size,
+            frame_stack=frame_stack,
+        )
+    elif arch == "mlp":
+        net = QNetwork(input_dim, action_dim, hidden_sizes)
+    else:
+        raise ValueError(f"Unknown architecture: {arch}")
     return net.to(device)
 
 
@@ -193,7 +208,7 @@ def make_optimizer(model: nn.Module, config: TrainConfig) -> torch.optim.Optimiz
 
 def estimate_fim_trace(
     env,
-    q_net: QNetwork,
+    q_net: nn.Module,
     seeds: Iterable[int],
     device: torch.device,
     max_steps: int,

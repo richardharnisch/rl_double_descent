@@ -7,6 +7,8 @@ import numpy as np
 import torch
 from torch import nn
 
+from rl_dd.cnn import CNNFeatureExtractor
+
 
 class QNetwork(nn.Module):
     def __init__(
@@ -24,6 +26,28 @@ class QNetwork(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
+
+
+class CNNQNetwork(nn.Module):
+    def __init__(
+        self,
+        input_dim: int,
+        action_dim: int,
+        hidden_channels: Iterable[int],
+        grid_size: int,
+        frame_stack: int,
+    ) -> None:
+        super().__init__()
+        self.features = CNNFeatureExtractor(
+            input_dim,
+            hidden_channels,
+            grid_size=grid_size,
+            frame_stack=frame_stack,
+        )
+        self.head = nn.Linear(self.features.output_dim, action_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.head(self.features(x))
 
 
 @dataclass

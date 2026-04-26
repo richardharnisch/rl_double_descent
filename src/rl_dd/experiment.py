@@ -592,6 +592,7 @@ def run_sanity_check(args: argparse.Namespace) -> None:
         grid_size=5,
         obstacle_prob=0.0,
         max_steps=32,
+        frame_stack=args.frame_stack,
         start_corner=args.start,
         goal_corner=args.end,
     )
@@ -636,8 +637,23 @@ def run_sanity_check(args: argparse.Namespace) -> None:
             early_stop_return=args.early_stop_return,
             early_stop_episodes=args.early_stop_episodes,
         )
-        policy_net = build_policy(obs_dim, action_dim, hidden_sizes, device)
-        value_net = build_value(obs_dim, hidden_sizes, device)
+        policy_net = build_policy(
+            obs_dim,
+            action_dim,
+            hidden_sizes,
+            device,
+            arch=args.arch,
+            grid_size=env_config.grid_size,
+            frame_stack=env_config.frame_stack,
+        )
+        value_net = build_value(
+            obs_dim,
+            hidden_sizes,
+            device,
+            arch=args.arch,
+            grid_size=env_config.grid_size,
+            frame_stack=env_config.frame_stack,
+        )
         train_trpo(
             env,
             policy_net,
@@ -655,8 +671,24 @@ def run_sanity_check(args: argparse.Namespace) -> None:
             device=device,
         )
     else:
-        q_net = build_network(obs_dim, action_dim, hidden_sizes, device)
-        target_net = build_network(obs_dim, action_dim, hidden_sizes, device)
+        q_net = build_network(
+            obs_dim,
+            action_dim,
+            hidden_sizes,
+            device,
+            arch=args.arch,
+            grid_size=env_config.grid_size,
+            frame_stack=env_config.frame_stack,
+        )
+        target_net = build_network(
+            obs_dim,
+            action_dim,
+            hidden_sizes,
+            device,
+            arch=args.arch,
+            grid_size=env_config.grid_size,
+            frame_stack=env_config.frame_stack,
+        )
         optimizer = make_optimizer(q_net, train_config)
         buffer = ReplayBuffer(train_config.buffer_size, obs_dim, seed=0)
 
@@ -700,6 +732,7 @@ def run_experiment(
         grid_size=args.grid_size,
         obstacle_prob=args.obstacle_prob,
         max_steps=args.max_steps,
+        frame_stack=args.frame_stack,
         start_corner=args.start,
         goal_corner=args.end,
     )
@@ -771,9 +804,22 @@ def run_experiment(
                             early_stop_episodes=args.early_stop_episodes,
                         )
                         policy_net = build_policy(
-                            obs_dim, action_dim, hidden_sizes, device
+                            obs_dim,
+                            action_dim,
+                            hidden_sizes,
+                            device,
+                            arch=args.arch,
+                            grid_size=args.grid_size,
+                            frame_stack=args.frame_stack,
                         )
-                        value_net = build_value(obs_dim, hidden_sizes, device)
+                        value_net = build_value(
+                            obs_dim,
+                            hidden_sizes,
+                            device,
+                            arch=args.arch,
+                            grid_size=args.grid_size,
+                            frame_stack=args.frame_stack,
+                        )
                         model_for_eval = policy_net
                         num_params = float(count_parameters(model_for_eval))
                         run_meta = {
@@ -852,9 +898,23 @@ def run_experiment(
                             ),
                         )
                     else:
-                        q_net = build_network(obs_dim, action_dim, hidden_sizes, device)
+                        q_net = build_network(
+                            obs_dim,
+                            action_dim,
+                            hidden_sizes,
+                            device,
+                            arch=args.arch,
+                            grid_size=args.grid_size,
+                            frame_stack=args.frame_stack,
+                        )
                         target_net = build_network(
-                            obs_dim, action_dim, hidden_sizes, device
+                            obs_dim,
+                            action_dim,
+                            hidden_sizes,
+                            device,
+                            arch=args.arch,
+                            grid_size=args.grid_size,
+                            frame_stack=args.frame_stack,
                         )
                         optimizer = make_optimizer(q_net, train_config)
                         buffer = ReplayBuffer(
@@ -1024,8 +1084,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--base-seed", type=int, default=0)
     parser.add_argument("--run-id", type=int, default=None)
     parser.add_argument("--algo", choices=["dqn", "trpo"], default="dqn")
+    parser.add_argument("--arch", choices=["mlp", "cnn"], default="mlp")
     parser.add_argument("--grid-size", type=int, default=8)
     parser.add_argument("--obstacle-prob", type=float, default=0.2)
+    parser.add_argument("--frame-stack", type=int, default=2)
     parser.add_argument("--start", type=int, default=None)
     parser.add_argument("--end", type=int, default=None)
     parser.add_argument("--episodes", type=int, default=2000)
