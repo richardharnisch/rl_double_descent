@@ -14,7 +14,7 @@
 
 set -euo pipefail
 
-PROJECT_ROOT="/home3/s5238366/thesis2"
+PROJECT_ROOT="/home3/s5238366/rl_double_descent"
 cd "$PROJECT_ROOT"
 
 mkdir -p slurm results
