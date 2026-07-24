@@ -18,6 +18,8 @@ class GridWorldConfig:
     frame_stack: int = 2
     start_corner: Optional[int] = None
     goal_corner: Optional[int] = None
+    sticky_action_prob: float = 0.0
+    slip_prob: float = 0.0
 
 
 class GridWorldEnv(gym.Env):
@@ -25,6 +27,10 @@ class GridWorldEnv(gym.Env):
 
     def __init__(self, config: GridWorldConfig, seed: Optional[int] = None) -> None:
         super().__init__()
+        if not 0.0 <= config.sticky_action_prob <= 1.0:
+            raise ValueError("sticky_action_prob must be between 0 and 1.")
+        if not 0.0 <= config.slip_prob <= 1.0:
+            raise ValueError("slip_prob must be between 0 and 1.")
         self.config = config
         self.rng = np.random.default_rng(seed)
         self.action_space = spaces.Discrete(4)
@@ -43,6 +49,7 @@ class GridWorldEnv(gym.Env):
         self._set_start_goal(config.start_corner, config.goal_corner)
         self._agent_pos: Tuple[int, int] = self._start_pos
         self._steps = 0
+        self._previous_action: Optional[int] = None
         self._cell_size = 16
         self._obs_stack: deque[np.ndarray] = deque(maxlen=config.frame_stack)
 
@@ -97,6 +104,7 @@ class GridWorldEnv(gym.Env):
             self._walls = self._generate_grid()
         self._agent_pos = self._start_pos
         self._steps = 0
+        self._previous_action = None
         frame = self._get_obs()
         self._obs_stack.clear()
         for _ in range(self.config.frame_stack):
@@ -105,13 +113,22 @@ class GridWorldEnv(gym.Env):
 
     def step(self, action: int):
         self._steps += 1
+        chosen_action = int(action)
+        if (
+            self._previous_action is not None
+            and self.rng.random() < self.config.sticky_action_prob
+        ):
+            chosen_action = self._previous_action
+        if self.rng.random() < self.config.slip_prob:
+            chosen_action = int(self.rng.integers(0, self.action_space.n))
+        self._previous_action = chosen_action
         row, col = self._agent_pos
         prev_dist = np.linalg.norm(np.array([row, col]) - np.array(self._goal_pos))
-        if action == 0:
+        if chosen_action == 0:
             candidate = (row - 1, col)
-        elif action == 1:
+        elif chosen_action == 1:
             candidate = (row, col + 1)
-        elif action == 2:
+        elif chosen_action == 2:
             candidate = (row + 1, col)
         else:
             candidate = (row, col - 1)

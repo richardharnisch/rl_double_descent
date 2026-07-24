@@ -595,6 +595,8 @@ def run_sanity_check(args: argparse.Namespace) -> None:
         frame_stack=args.frame_stack,
         start_corner=args.start,
         goal_corner=args.end,
+        sticky_action_prob=args.sticky_action_prob,
+        slip_prob=args.slip_prob,
     )
     sanity_decay = (
         args.eps_decay_episodes
@@ -735,6 +737,8 @@ def run_experiment(
         frame_stack=args.frame_stack,
         start_corner=args.start,
         goal_corner=args.end,
+        sticky_action_prob=args.sticky_action_prob,
+        slip_prob=args.slip_prob,
     )
     decay_episodes = (
         args.eps_decay_episodes
@@ -1090,6 +1094,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--frame-stack", type=int, default=2)
     parser.add_argument("--start", type=int, default=None)
     parser.add_argument("--end", type=int, default=None)
+    parser.add_argument("--sticky-action-prob", type=float, default=0.0)
+    parser.add_argument("--slip-prob", type=float, default=0.0)
     parser.add_argument("--episodes", type=int, default=2000)
     parser.add_argument("--max-steps", type=int, default=64)
     parser.add_argument("--batch-size", type=int, default=64)

@@ -88,6 +88,26 @@ class CNNArchitectureTests(unittest.TestCase):
 
         self.assertGreater(count_parameters(large), count_parameters(small))
 
+    def test_sticky_action_is_reproducible_and_reset_clears_history(self) -> None:
+        config = GridWorldConfig(
+            grid_size=4,
+            obstacle_prob=0.0,
+            max_steps=8,
+            frame_stack=1,
+            start_corner=0,
+            goal_corner=2,
+            sticky_action_prob=1.0,
+        )
+        env = GridWorldEnv(config, seed=7)
+        env.reset(seed=7)
+        env.step(1)
+        _, _, _, _, _ = env.step(2)
+        self.assertEqual(env._agent_pos, (0, 2))
+
+        env.reset(seed=7)
+        _, _, _, _, _ = env.step(2)
+        self.assertEqual(env._agent_pos, (1, 0))
+
 
 if __name__ == "__main__":
     unittest.main()
