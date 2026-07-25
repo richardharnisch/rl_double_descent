@@ -1196,7 +1196,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--run-id", type=int, default=None)
     parser.add_argument("--task", choices=["gridworld", "bandit"], default="gridworld")
     parser.add_argument("--algo", choices=["dqn", "trpo"], default="dqn")
-    parser.add_argument("--arch", choices=["mlp", "cnn"], default="mlp")
+    parser.add_argument(
+        "--arch", choices=["mlp", "cnn", "random_features"], default="mlp"
+    )
     parser.add_argument("--grid-size", type=int, default=8)
     parser.add_argument("--obstacle-prob", type=float, default=0.2)
     parser.add_argument("--frame-stack", type=int, default=2)
@@ -1264,12 +1266,16 @@ def main() -> None:
             raise ValueError("--start and --end must be different.")
 
     if args.task == "bandit":
-        if args.algo != "trpo":
-            raise ValueError("The contextual bandit task currently requires --algo trpo.")
-        if args.arch != "mlp":
-            raise ValueError("The contextual bandit task currently requires --arch mlp.")
+        if args.algo not in {"trpo", "dqn"}:
+            raise ValueError("The contextual bandit task requires --algo trpo or --algo dqn.")
+        if args.arch not in {"mlp", "random_features"}:
+            raise ValueError(
+                "The contextual bandit task requires --arch mlp or --arch random_features."
+            )
         if args.max_steps != 1:
             raise ValueError("The contextual bandit task requires --max-steps 1.")
+    if args.arch == "random_features" and parse_depths(args.depths) != [1]:
+        raise ValueError("The random_features architecture requires --depths 1.")
 
     if not args.log_dir:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

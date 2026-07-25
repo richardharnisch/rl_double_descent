@@ -1,0 +1,77 @@
+{
+  "acceptance_criterion": {
+    "fit_threshold": 0.95,
+    "fit_field": "train_optimal_action_rate",
+    "practical_effect": 0.05,
+    "uncertainty": "each rise, drop, and recovery must exceed pooled 95% normal-approximation uncertainty",
+    "persistent_recovery": "all capacities from recovery through the end must stay at or above the dip mean"
+  },
+  "run_count_per_capacity": {
+    "256.0": 3,
+    "384.0": 3,
+    "512.0": 3,
+    "768.0": 3,
+    "1024.0": 3
+  },
+  "candidate_count": 4,
+  "passed": false,
+  "passing_candidates": [],
+  "all_candidates": [
+    {
+      "peak_width": 384.0,
+      "dip_width": 512.0,
+      "recovery_width": 768.0,
+      "initial_rise": -0.03696206246813133,
+      "drop": 0.008993560026089364,
+      "recovery_gain": 0.019502081622679968,
+      "fit_at_dip": 1.0,
+      "rise_supported_by_95ci": false,
+      "drop_supported_by_95ci": false,
+      "recovery_supported_by_95ci": false,
+      "persistent_recovery": true,
+      "passes": false
+    },
+    {
+      "peak_width": 384.0,
+      "dip_width": 512.0,
+      "recovery_width": 1024.0,
+      "initial_rise": -0.03696206246813133,
+      "drop": 0.008993560026089364,
+      "recovery_gain": 0.0377091032763322,
+      "fit_at_dip": 1.0,
+      "rise_supported_by_95ci": false,
+      "drop_supported_by_95ci": false,
+      "recovery_supported_by_95ci": false,
+      "persistent_recovery": true,
+      "passes": false
+    },
+    {
+      "peak_width": 384.0,
+      "dip_width": 768.0,
+      "recovery_width": 1024.0,
+      "initial_rise": -0.03696206246813133,
+      "drop": -0.010508521596590603,
+      "recovery_gain": 0.018207021653652233,
+      "fit_at_dip": 1.0,
+      "rise_supported_by_95ci": false,
+      "drop_supported_by_95ci": false,
+      "recovery_supported_by_95ci": false,
+      "persistent_recovery": true,
+      "passes": false
+    },
+    {
+      "peak_width": 512.0,
+      "dip_width": 768.0,
+      "recovery_width": 1024.0,
+      "initial_rise": -0.008993560026089364,
+      "drop": -0.019502081622679968,
+      "recovery_gain": 0.018207021653652233,
+      "fit_at_dip": 1.0,
+      "rise_supported_by_95ci": false,
+      "drop_supported_by_95ci": false,
+      "recovery_supported_by_95ci": false,
+      "persistent_recovery": true,
+      "passes": false
+    }
+  ]
+}

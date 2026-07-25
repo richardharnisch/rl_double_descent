@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from rl_dd.dqn import CNNQNetwork, QNetwork, ReplayBuffer
+from rl_dd.dqn import CNNQNetwork, QNetwork, RandomFeatureQNetwork, ReplayBuffer
 
 
 @dataclass
@@ -197,6 +197,11 @@ def build_network(
         )
     elif arch == "mlp":
         net = QNetwork(input_dim, action_dim, hidden_sizes)
+    elif arch == "random_features":
+        sizes = list(hidden_sizes)
+        if len(sizes) != 1:
+            raise ValueError("random_features architecture requires depth 1.")
+        net = RandomFeatureQNetwork(input_dim, action_dim, sizes[0])
     else:
         raise ValueError(f"Unknown architecture: {arch}")
     return net.to(device)

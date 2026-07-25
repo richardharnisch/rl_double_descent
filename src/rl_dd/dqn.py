@@ -28,6 +28,20 @@ class QNetwork(nn.Module):
         return self.model(x)
 
 
+class RandomFeatureQNetwork(nn.Module):
+    """Q network with a frozen random feature map and trainable linear head."""
+
+    def __init__(self, input_dim: int, action_dim: int, feature_width: int) -> None:
+        super().__init__()
+        self.features = nn.Linear(input_dim, feature_width)
+        for parameter in self.features.parameters():
+            parameter.requires_grad = False
+        self.head = nn.Linear(feature_width, action_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.head(torch.tanh(self.features(x)))
+
+
 class CNNQNetwork(nn.Module):
     def __init__(
         self,

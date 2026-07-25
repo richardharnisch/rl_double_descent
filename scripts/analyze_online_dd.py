@@ -19,7 +19,12 @@ def read_rows(path: Path) -> list[dict[str, float]]:
         return [{key: float(value) for key, value in row.items()} for row in csv.DictReader(handle)]
 
 
-def aggregate(rows: list[dict[str, float]], min_return: float, max_return: float) -> list[dict[str, float]]:
+def aggregate(
+    rows: list[dict[str, float]],
+    min_return: float,
+    max_return: float,
+    fit_field: str,
+) -> list[dict[str, float]]:
     scale = max_return - min_return
     if scale <= 0:
         raise ValueError("max_return must be greater than min_return")
@@ -29,9 +34,11 @@ def aggregate(rows: list[dict[str, float]], min_return: float, max_return: float
     summary = []
     for num_params, group in sorted(groups.items()):
         test = np.array([row["test_return"] for row in group], dtype=float)
-        train = np.array([row["train_return"] for row in group], dtype=float)
+        if fit_field not in group[0]:
+            raise ValueError(f"fit field is missing from metrics: {fit_field}")
+        train = np.array([row[fit_field] for row in group], dtype=float)
         normalized_test = (test - min_return) / scale
-        normalized_train = (train - min_return) / scale
+        normalized_train = train if fit_field != "train_return" else (train - min_return) / scale
         row: dict[str, float] = {
             "num_params": num_params,
             "width": float(group[0].get("width", float("nan"))),
@@ -138,17 +145,19 @@ def main() -> None:
     parser.add_argument("--max-return", type=float, required=True)
     parser.add_argument("--fit-threshold", type=float, default=0.95)
     parser.add_argument("--practical-effect", type=float, default=0.10)
+    parser.add_argument("--fit-field", default="train_return")
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     rows = read_rows(args.metrics)
-    summary = aggregate(rows, args.min_return, args.max_return)
+    summary = aggregate(rows, args.min_return, args.max_return, args.fit_field)
     candidates = find_candidates(summary, args.fit_threshold, args.practical_effect)
     write_csv(args.out_dir / "aggregate.csv", summary)
     plot(summary, args.out_dir / "curve.png")
     analysis = {
         "acceptance_criterion": {
             "fit_threshold": args.fit_threshold,
+            "fit_field": args.fit_field,
             "practical_effect": args.practical_effect,
             "uncertainty": "each rise, drop, and recovery must exceed pooled 95% normal-approximation uncertainty",
             "persistent_recovery": "all capacities from recovery through the end must stay at or above the dip mean",

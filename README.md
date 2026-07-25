@@ -72,11 +72,16 @@ Model size
 - `--base-seed` (default: `0`): Base RNG seed for runs; run `k` uses `base_seed + k` for all RNGs.
 - `--run-id` (default: unset): Force a single run index (use with `--runs 1`) so array jobs can map distinct seeds to distinct runs.
 - `--algo` (default: `dqn`): Algorithm choice (`dqn` or `trpo`). DQN-specific flags are ignored when using TRPO.
-- `--arch` (default: `mlp`): Network architecture (`mlp` or `cnn`). For `cnn`, `--widths` controls conv channels and `--depths` controls the number of conv layers.
+- `--arch` (default: `mlp`): Network architecture (`mlp`, `cnn`, or
+  `random_features`). For `cnn`, `--widths` controls conv channels and
+  `--depths` controls the number of conv layers. `random_features` uses a
+  frozen random feature map with a trainable policy/value head and requires
+  `--depths 1`.
 
 Environment
 - `--task` (default: `gridworld`): Task choice (`gridworld` or `bandit`). The
-  bandit task requires `--algo trpo --arch mlp --max-steps 1`.
+  bandit task requires `--algo trpo` or `--algo dqn`, `--arch mlp` or
+  `--arch random_features`, and `--max-steps 1`.
 - `--grid-size` (default: `8`): Square grid side length. Observation uses a per-tile one-hot encoding (4 channels) and is flattened. Also has 2-frame stacking.
 - `--obstacle-prob` (default: `0.2`): Bernoulli probability of a wall in each cell (except start/goal). Maps are regenerated per seed until solvable.
 - `--max-steps` (default: `64`): Maximum steps per episode before truncation (applies to training, eval, and video rollouts).
@@ -158,6 +163,25 @@ uv run --no-sync python scripts/analyze_online_dd.py \
 For long-run checkpoints, use `scripts/analyze_episodic_dd.py` with a glob of
 the raw `periodic_eval.csv` files. Both analyzers write aggregate CSV, a curve,
 and JSON containing every tested candidate and whether it passed.
+
+For online LSTD-Q bandit experiments, use:
+
+```bash
+uv run --no-sync python scripts/run_online_lstd_bandit.py \
+  --task delayed_mdp --widths 2,4,8,16,32,64,128,256 \
+  --runs 3 --episodes 1000 --gamma .9 \
+  --log-dir testing/lstd_delayed_example
+uv run --no-sync python scripts/analyze_online_dd.py \
+  --metrics testing/lstd_delayed_example/metrics.csv \
+  --out-dir testing/lstd_delayed_example/analysis \
+  --min-return 0 --max-return 1 --fit-field train_optimal_action_rate \
+  --fit-threshold .95 --practical-effect .10
+```
+
+The LSTD runner updates sufficient statistics after each live transition and
+does not retain a frozen observation/reward dataset. `--fit-field` permits a
+direct training optimal-action diagnostic while the curve remains based on
+held-out return.
 
 Sanity check (learnability)
 - `--sanity-check` (default: disabled): Run the obstacle-free learnability check before the main experiment.

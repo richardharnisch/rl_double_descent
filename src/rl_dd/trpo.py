@@ -29,6 +29,36 @@ class PolicyNetwork(nn.Module):
         return self.model(x)
 
 
+class RandomFeaturePolicyNetwork(nn.Module):
+    """Policy with a frozen random feature map and trainable linear head."""
+
+    def __init__(
+        self, input_dim: int, action_dim: int, feature_width: int
+    ) -> None:
+        super().__init__()
+        self.features = nn.Linear(input_dim, feature_width)
+        for parameter in self.features.parameters():
+            parameter.requires_grad = False
+        self.head = nn.Linear(feature_width, action_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.head(torch.tanh(self.features(x)))
+
+
+class RandomFeatureValueNetwork(nn.Module):
+    """Value function matching :class:`RandomFeaturePolicyNetwork`."""
+
+    def __init__(self, input_dim: int, feature_width: int) -> None:
+        super().__init__()
+        self.features = nn.Linear(input_dim, feature_width)
+        for parameter in self.features.parameters():
+            parameter.requires_grad = False
+        self.head = nn.Linear(feature_width, 1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.head(torch.tanh(self.features(x))).squeeze(-1)
+
+
 class ValueNetwork(nn.Module):
     def __init__(self, input_dim: int, hidden_sizes: Iterable[int]) -> None:
         super().__init__()
@@ -126,6 +156,11 @@ def build_policy(
         )
     elif arch == "mlp":
         net = PolicyNetwork(input_dim, action_dim, hidden_sizes)
+    elif arch == "random_features":
+        sizes = list(hidden_sizes)
+        if len(sizes) != 1:
+            raise ValueError("random_features architecture requires depth 1.")
+        net = RandomFeaturePolicyNetwork(input_dim, action_dim, sizes[0])
     else:
         raise ValueError(f"Unknown architecture: {arch}")
     return net.to(device)
@@ -149,6 +184,11 @@ def build_value(
         )
     elif arch == "mlp":
         net = ValueNetwork(input_dim, hidden_sizes)
+    elif arch == "random_features":
+        sizes = list(hidden_sizes)
+        if len(sizes) != 1:
+            raise ValueError("random_features architecture requires depth 1.")
+        net = RandomFeatureValueNetwork(input_dim, sizes[0])
     else:
         raise ValueError(f"Unknown architecture: {arch}")
     return net.to(device)
