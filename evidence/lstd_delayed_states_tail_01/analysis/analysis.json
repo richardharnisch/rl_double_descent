@@ -1,0 +1,34 @@
+{
+  "acceptance_criterion": {
+    "fit_threshold": 0.95,
+    "fit_field": "train_optimal_action_rate",
+    "practical_effect": 0.1,
+    "uncertainty": "each rise, drop, and recovery must exceed pooled 95% normal-approximation uncertainty",
+    "persistent_recovery": "all capacities from recovery through the end must stay at or above the dip mean"
+  },
+  "run_count_per_capacity": {
+    "1536.0": 3,
+    "2048.0": 3,
+    "3072.0": 3,
+    "4096.0": 3
+  },
+  "candidate_count": 1,
+  "passed": false,
+  "passing_candidates": [],
+  "all_candidates": [
+    {
+      "peak_width": 2048.0,
+      "dip_width": 3072.0,
+      "recovery_width": 4096.0,
+      "initial_rise": -0.0002564336359502928,
+      "drop": 0.011290933017929383,
+      "recovery_gain": -0.04130639128386959,
+      "fit_at_dip": 0.9866666666666667,
+      "rise_supported_by_95ci": false,
+      "drop_supported_by_95ci": false,
+      "recovery_supported_by_95ci": false,
+      "persistent_recovery": false,
+      "passes": false
+    }
+  ]
+}

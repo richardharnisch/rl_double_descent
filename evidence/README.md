@@ -26,6 +26,7 @@ rl_dd.experiment`; no frozen observation or trajectory dataset was used.
 | `lstd_delayed_01` / `lstd_delayed_02` / `lstd_delayed_highwidth_01` / `lstd_delayed_highwidth_02` | Incremental online LSTD-Q on a two-step delayed MDP; no analyzer pass |
 | `lstd_delayed_states_01` / `lstd_delayed_states_highwidth_01` | Delayed online LSTD-Q with 100 live training contexts and widths through 1536; no analyzer pass |
 | `lstd_delayed_contrast_full_01` | Delayed online LSTD-Q, 20 live training contexts, complete widths 2–1024, 3 runs; near candidate rejected because recovery was not persistent |
+| `lstd_delayed_states_tail_01` | Fresh 100-context delayed online LSTD-Q tail at widths 1536–4096, 3 runs; analyzer false |
 | `online_cnn_randomcorners_01` | CNN/TRPO, seeded random start/goal corners, widths 2–32, 3 runs |
 | `online_cnn_depth_01` | CNN/TRPO, width 8, depths 1–5, 3 runs |
 | `online_episodic_01` | CNN/TRPO width 16/depth 2, 20,000 episodes, 1,000-episode checkpoints, 3 runs |
