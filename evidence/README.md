@@ -13,6 +13,7 @@ rl_dd.experiment`; no frozen observation or trajectory dataset was used.
 | `online_dqn_sweep_01` | CNN/DQN, 4x4 grid, widths 2–48, 3 runs |
 | `online_cnn_sticky_01` | CNN/TRPO, sticky actions 0.2, widths 2–32, 3 runs |
 | `online_cnn_sticky_01p1` | CNN/TRPO, sticky actions 0.1, widths 2–32, 3 runs |
+| `online_cnn_sticky_01p1_confirm` | CNN/TRPO, sticky actions 0.1, widths 2–32, 5 runs, 50 held-out maps |
 | `online_cnn_rewardnoise_01` | CNN/TRPO, online reward noise 0.1, widths 2–32, 3 runs |
 | `online_cnn_randomcorners_01` | CNN/TRPO, seeded random start/goal corners, widths 2–32, 3 runs |
 | `online_cnn_depth_01` | CNN/TRPO, width 8, depths 1–5, 3 runs |

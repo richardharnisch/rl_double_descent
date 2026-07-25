@@ -46,6 +46,11 @@ Online stochasticity did not produce a valid curve:
 - Sticky actions `p=0.1`: the most suggestive segment was widths `8,10,12`,
   with normalized test means about `0.263, 0.168, 0.329`; the preceding rise and
   drop were below the fixed practical-effect rule. The result was false.
+- A confirmatory p=0.1 sweep used five runs per width and 50 held-out maps.
+  Normalized test means were approximately `0.280, 0.233, 0.321, 0.253,
+  0.240, 0.231, 0.246, 0.305, 0.226, 0.283, 0.268` for widths 2 through 32.
+  Several widths interpolated training maps, but the full analyzer still
+  returned `passed: false`; the exploratory fluctuation did not survive.
 - Zero-mean online reward noise with standard deviation `0.1`: training fit
   remained unstable, with aggregate normalized means roughly `0.54` to `0.88`
   across the sweep. It failed the interpolation prerequisite.
@@ -84,6 +89,7 @@ The raw per-run files and generated analyses are in:
 - `testing/online_dqn_sweep_01/`
 - `testing/online_cnn_sticky_01/`
 - `testing/online_cnn_sticky_01p1/`
+- `testing/online_cnn_sticky_01p1_confirm/`
 - `testing/online_cnn_rewardnoise_01/`
 - `testing/online_cnn_randomcorners_01/`
 - `testing/online_cnn_depth_01/`
