@@ -20,6 +20,7 @@ class GridWorldConfig:
     goal_corner: Optional[int] = None
     sticky_action_prob: float = 0.0
     slip_prob: float = 0.0
+    reward_noise_std: float = 0.0
 
 
 class GridWorldEnv(gym.Env):
@@ -31,6 +32,8 @@ class GridWorldEnv(gym.Env):
             raise ValueError("sticky_action_prob must be between 0 and 1.")
         if not 0.0 <= config.slip_prob <= 1.0:
             raise ValueError("slip_prob must be between 0 and 1.")
+        if config.reward_noise_std < 0.0:
+            raise ValueError("reward_noise_std must be non-negative.")
         self.config = config
         self.rng = np.random.default_rng(seed)
         self.action_space = spaces.Discrete(4)
@@ -150,6 +153,8 @@ class GridWorldEnv(gym.Env):
         )
         bonus = (prev_dist - new_dist) / 100.0
         reward = 1.0 if terminated else (-0.01 + bonus)
+        if self.config.reward_noise_std > 0.0:
+            reward += float(self.rng.normal(0.0, self.config.reward_noise_std))
         frame = self._get_obs()
         if self.config.frame_stack > 0:
             self._obs_stack.append(frame)

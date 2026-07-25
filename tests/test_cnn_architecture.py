@@ -120,6 +120,24 @@ class CNNArchitectureTests(unittest.TestCase):
         self.assertEqual(env._start_pos, start)
         self.assertEqual(env._goal_pos, goal)
 
+    def test_reward_noise_is_seeded(self) -> None:
+        config = GridWorldConfig(
+            grid_size=4,
+            obstacle_prob=0.0,
+            max_steps=4,
+            frame_stack=1,
+            start_corner=0,
+            goal_corner=2,
+            reward_noise_std=0.1,
+        )
+        first = GridWorldEnv(config, seed=11)
+        second = GridWorldEnv(config, seed=11)
+        first.reset(seed=11)
+        second.reset(seed=11)
+        first_rewards = [first.step(1)[1] for _ in range(3)]
+        second_rewards = [second.step(1)[1] for _ in range(3)]
+        self.assertEqual(first_rewards, second_rewards)
+
 
 if __name__ == "__main__":
     unittest.main()
