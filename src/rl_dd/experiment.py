@@ -99,16 +99,32 @@ def parse_depths(value: str) -> List[int]:
 
 def aggregate_results(rows: List[Dict[str, float]]) -> List[Dict[str, float]]:
     grouped: Dict[int, Dict[str, List[float]]] = {}
+    diagnostic_names = (
+        "train_entropy",
+        "test_entropy",
+        "train_coverage",
+        "test_coverage",
+        "train_return_std",
+        "test_return_std",
+    )
     for row in rows:
         key = int(row["num_params"])
         grouped.setdefault(
             key,
-            {"train_return": [], "test_return": [], "fim_trace": []},
+            {
+                "train_return": [],
+                "test_return": [],
+                "fim_trace": [],
+                **{name: [] for name in diagnostic_names},
+            },
         )
         grouped[key]["train_return"].append(float(row["train_return"]))
         grouped[key]["test_return"].append(float(row["test_return"]))
         if "fim_trace" in row and not np.isnan(float(row["fim_trace"])):
             grouped[key]["fim_trace"].append(float(row["fim_trace"]))
+        for name in diagnostic_names:
+            if name in row and not np.isnan(float(row[name])):
+                grouped[key][name].append(float(row[name]))
 
     summary = []
     for num_params, metrics in grouped.items():
@@ -125,6 +141,11 @@ def aggregate_results(rows: List[Dict[str, float]]) -> List[Dict[str, float]]:
         if fim_vals.size:
             summary_row["fim_mean"] = float(fim_vals.mean())
             summary_row["fim_std"] = float(fim_vals.std(ddof=0))
+        for name in diagnostic_names:
+            values = np.array(metrics[name], dtype=np.float64)
+            if values.size:
+                summary_row[f"{name}_mean"] = float(values.mean())
+                summary_row[f"{name}_std"] = float(values.std(ddof=0))
         summary.append(summary_row)
     summary.sort(key=lambda x: x["num_params"])
     return summary
@@ -329,6 +350,65 @@ def save_trpo_updates(
             }
         )
     save_csv(path, rows)
+
+
+def evaluate_policy_diagnostics(
+    env: GridWorldEnv,
+    model: torch.nn.Module,
+    seeds: List[int],
+    episodes_per_seed: int,
+    device: torch.device,
+) -> Dict[str, float]:
+    """Evaluate greedy actions and collect return, entropy, and coverage."""
+    was_training = model.training
+    model.eval()
+    returns: List[float] = []
+    entropies: List[float] = []
+    coverages: List[float] = []
+    for seed in seeds:
+        for episode_idx in range(episodes_per_seed):
+            # Keep the seeded map fixed, but let stochastic transition RNG
+            # advance between repeated evaluation episodes.
+            reset_seed = int(seed) if episode_idx == 0 else None
+            reset_options = None if episode_idx == 0 else {"keep_map": True}
+            obs, _ = env.reset(seed=reset_seed, options=reset_options)
+            visited = {env._agent_pos}
+            episode_return = 0.0
+            episode_entropy: List[float] = []
+            done = False
+            while not done:
+                obs_t = torch.from_numpy(obs).float().to(device).unsqueeze(0)
+                with torch.no_grad():
+                    logits = model(obs_t)
+                    probs = torch.softmax(logits, dim=1)
+                    action = int(torch.argmax(logits, dim=1).item())
+                episode_entropy.append(
+                    float((-(probs * torch.log(probs + 1e-8)).sum()).item())
+                )
+                obs, reward, terminated, truncated, _ = env.step(action)
+                visited.add(env._agent_pos)
+                episode_return += float(reward)
+                done = terminated or truncated
+            free_cells = int((~env._walls).sum()) if env._walls is not None else 0
+            coverage = len(visited) / free_cells if free_cells else float("nan")
+            returns.append(episode_return)
+            entropies.append(float(np.mean(episode_entropy)))
+            coverages.append(float(coverage))
+    if was_training:
+        model.train()
+    if not returns:
+        return {
+            "return": 0.0,
+            "return_std": 0.0,
+            "entropy": float("nan"),
+            "coverage": float("nan"),
+        }
+    return {
+        "return": float(np.mean(returns)),
+        "return_std": float(np.std(returns, ddof=0)),
+        "entropy": float(np.mean(entropies)),
+        "coverage": float(np.mean(coverages)),
+    }
 
 
 def plot_episode_metrics(
@@ -1009,36 +1089,14 @@ def run_experiment(
                     else:
                         save_model_state(model_for_eval, run_dir / "model.pt")
 
-                if args.algo == "trpo":
-                    train_return = evaluate_policy_trpo(
-                        env,
-                        model_for_eval,
-                        train_seeds,
-                        episodes_per_seed=args.eval_episodes,
-                        device=device,
-                    )
-                    test_return = evaluate_policy_trpo(
-                        env,
-                        model_for_eval,
-                        test_seeds,
-                        episodes_per_seed=args.eval_episodes,
-                        device=device,
-                    )
-                else:
-                    train_return = evaluate_policy(
-                        env,
-                        model_for_eval,
-                        train_seeds,
-                        episodes_per_seed=args.eval_episodes,
-                        device=device,
-                    )
-                    test_return = evaluate_policy(
-                        env,
-                        model_for_eval,
-                        test_seeds,
-                        episodes_per_seed=args.eval_episodes,
-                        device=device,
-                    )
+                train_diagnostics = evaluate_policy_diagnostics(
+                    env, model_for_eval, train_seeds, args.eval_episodes, device
+                )
+                test_diagnostics = evaluate_policy_diagnostics(
+                    env, model_for_eval, test_seeds, args.eval_episodes, device
+                )
+                train_return = train_diagnostics["return"]
+                test_return = test_diagnostics["return"]
 
                 fim_trace = estimate_fim_trace(
                     env,
@@ -1067,6 +1125,12 @@ def run_experiment(
                     "num_params": num_params,
                     "train_return": float(train_return),
                     "test_return": float(test_return),
+                    "train_return_std": float(train_diagnostics["return_std"]),
+                    "test_return_std": float(test_diagnostics["return_std"]),
+                    "train_entropy": float(train_diagnostics["entropy"]),
+                    "test_entropy": float(test_diagnostics["entropy"]),
+                    "train_coverage": float(train_diagnostics["coverage"]),
+                    "test_coverage": float(test_diagnostics["coverage"]),
                     "fim_trace": float(fim_trace),
                 }
                 save_csv(run_dir / "metrics.csv", [run_row])

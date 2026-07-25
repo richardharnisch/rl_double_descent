@@ -108,6 +108,18 @@ class CNNArchitectureTests(unittest.TestCase):
         _, _, _, _, _ = env.step(2)
         self.assertEqual(env._agent_pos, (1, 0))
 
+    def test_keep_map_reset_preserves_random_map(self) -> None:
+        config = GridWorldConfig(grid_size=5, frame_stack=1)
+        env = GridWorldEnv(config, seed=3)
+        env.reset(seed=3)
+        walls = env._walls.copy()
+        start = env._start_pos
+        goal = env._goal_pos
+        env.reset(options={"keep_map": True})
+        self.assertTrue((env._walls == walls).all())
+        self.assertEqual(env._start_pos, start)
+        self.assertEqual(env._goal_pos, goal)
+
 
 if __name__ == "__main__":
     unittest.main()

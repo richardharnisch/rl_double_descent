@@ -87,21 +87,27 @@ class GridWorldEnv(gym.Env):
         if seed is not None:
             self.rng = np.random.default_rng(seed)
 
+        keep_map = bool(options and options.get("keep_map", False))
         start_corner = self.config.start_corner
         goal_corner = self.config.goal_corner
+        if keep_map and self._walls is not None:
+            start_corner = None
+            goal_corner = None
         if options:
             if "start_corner" in options:
                 start_corner = int(options["start_corner"])
             if "goal_corner" in options:
                 goal_corner = int(options["goal_corner"])
-        self._set_start_goal(start_corner, goal_corner)
+        if not keep_map or self._walls is None:
+            self._set_start_goal(start_corner, goal_corner)
         if (
             seed is not None
-            or self._walls is None
+            or (self._walls is None and not keep_map)
             or options
             or self._needs_new_map(start_corner, goal_corner)
         ):
-            self._walls = self._generate_grid()
+            if not keep_map:
+                self._walls = self._generate_grid()
         self._agent_pos = self._start_pos
         self._steps = 0
         self._previous_action = None
