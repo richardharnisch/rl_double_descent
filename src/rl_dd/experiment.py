@@ -10,6 +10,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+from rl_dd.bandit import ContextualBanditConfig, ContextualBanditEnv
 from rl_dd.env import GridWorldConfig, GridWorldEnv
 from rl_dd.dqn import ReplayBuffer
 from rl_dd.train import (
@@ -106,6 +107,7 @@ def aggregate_results(rows: List[Dict[str, float]]) -> List[Dict[str, float]]:
         "test_coverage",
         "train_return_std",
         "test_return_std",
+        "optimal_action_rate",
     )
     for row in rows:
         key = int(row["num_params"])
@@ -353,7 +355,7 @@ def save_trpo_updates(
 
 
 def evaluate_policy_diagnostics(
-    env: GridWorldEnv,
+    env,
     model: torch.nn.Module,
     seeds: List[int],
     episodes_per_seed: int,
@@ -365,16 +367,23 @@ def evaluate_policy_diagnostics(
     returns: List[float] = []
     entropies: List[float] = []
     coverages: List[float] = []
+    correct_actions_total: List[float] = []
     for seed in seeds:
         for episode_idx in range(episodes_per_seed):
             # Keep the seeded map fixed, but let stochastic transition RNG
             # advance between repeated evaluation episodes.
             reset_seed = int(seed) if episode_idx == 0 else None
-            reset_options = None if episode_idx == 0 else {"keep_map": True}
+            if episode_idx == 0:
+                reset_options = None
+            elif getattr(env, "is_contextual_bandit", False):
+                reset_options = {"keep_context": True}
+            else:
+                reset_options = {"keep_map": True}
             obs, _ = env.reset(seed=reset_seed, options=reset_options)
-            visited = {env._agent_pos}
+            visited = {tuple(np.asarray(obs, dtype=np.float32).round(6))}
             episode_return = 0.0
             episode_entropy: List[float] = []
+            correct_actions: List[float] = []
             done = False
             while not done:
                 obs_t = torch.from_numpy(obs).float().to(device).unsqueeze(0)
@@ -385,15 +394,22 @@ def evaluate_policy_diagnostics(
                 episode_entropy.append(
                     float((-(probs * torch.log(probs + 1e-8)).sum()).item())
                 )
-                obs, reward, terminated, truncated, _ = env.step(action)
-                visited.add(env._agent_pos)
+                obs, reward, terminated, truncated, info = env.step(action)
+                visited.add(tuple(np.asarray(obs, dtype=np.float32).round(6)))
+                if "correct" in info:
+                    correct_actions.append(float(info["correct"]))
                 episode_return += float(reward)
                 done = terminated or truncated
-            free_cells = int((~env._walls).sum()) if env._walls is not None else 0
-            coverage = len(visited) / free_cells if free_cells else float("nan")
+            if getattr(env, "is_contextual_bandit", False):
+                coverage = 1.0
+            else:
+                free_cells = int((~env._walls).sum()) if env._walls is not None else 0
+                coverage = len(visited) / free_cells if free_cells else float("nan")
             returns.append(episode_return)
             entropies.append(float(np.mean(episode_entropy)))
             coverages.append(float(coverage))
+            if correct_actions:
+                correct_actions_total.extend(correct_actions)
     if was_training:
         model.train()
     if not returns:
@@ -402,12 +418,18 @@ def evaluate_policy_diagnostics(
             "return_std": 0.0,
             "entropy": float("nan"),
             "coverage": float("nan"),
+            "optimal_action_rate": float("nan"),
         }
     return {
         "return": float(np.mean(returns)),
         "return_std": float(np.std(returns, ddof=0)),
         "entropy": float(np.mean(entropies)),
         "coverage": float(np.mean(coverages)),
+        "optimal_action_rate": (
+            float(np.mean(correct_actions_total))
+            if correct_actions_total
+            else float("nan")
+        ),
     }
 
 
@@ -811,17 +833,27 @@ def run_experiment(
     log_root = Path(args.log_dir)
     log_root.mkdir(parents=True, exist_ok=True)
 
-    env_config = GridWorldConfig(
-        grid_size=args.grid_size,
-        obstacle_prob=args.obstacle_prob,
-        max_steps=args.max_steps,
-        frame_stack=args.frame_stack,
-        start_corner=args.start,
-        goal_corner=args.end,
-        sticky_action_prob=args.sticky_action_prob,
-        slip_prob=args.slip_prob,
-        reward_noise_std=args.reward_noise_std,
-    )
+    if args.task == "bandit":
+        env_config = ContextualBanditConfig(
+            context_dim=args.context_dim,
+            action_dim=args.bandit_actions,
+            teacher_hidden=args.bandit_teacher_hidden,
+            teacher_seed=args.bandit_teacher_seed,
+            reward_noise_std=args.reward_noise_std,
+            max_steps=args.max_steps,
+        )
+    else:
+        env_config = GridWorldConfig(
+            grid_size=args.grid_size,
+            obstacle_prob=args.obstacle_prob,
+            max_steps=args.max_steps,
+            frame_stack=args.frame_stack,
+            start_corner=args.start,
+            goal_corner=args.end,
+            sticky_action_prob=args.sticky_action_prob,
+            slip_prob=args.slip_prob,
+            reward_noise_std=args.reward_noise_std,
+        )
     decay_episodes = (
         args.eps_decay_episodes
         if args.eps_decay_episodes is not None
@@ -856,7 +888,10 @@ def run_experiment(
                 set_global_seeds(run_seed)
                 rng = np.random.default_rng(run_seed)
 
-                env = GridWorldEnv(env_config, seed=run_seed)
+                if args.task == "bandit":
+                    env = ContextualBanditEnv(env_config, seed=run_seed)
+                else:
+                    env = GridWorldEnv(env_config, seed=run_seed)
                 obs_dim = env.observation_space.shape[0]
                 action_dim = env.action_space.n
 
@@ -1133,6 +1168,12 @@ def run_experiment(
                     "test_entropy": float(test_diagnostics["entropy"]),
                     "train_coverage": float(train_diagnostics["coverage"]),
                     "test_coverage": float(test_diagnostics["coverage"]),
+                    "train_optimal_action_rate": float(
+                        train_diagnostics["optimal_action_rate"]
+                    ),
+                    "test_optimal_action_rate": float(
+                        test_diagnostics["optimal_action_rate"]
+                    ),
                     "fim_trace": float(fim_trace),
                 }
                 save_csv(run_dir / "metrics.csv", [run_row])
@@ -1153,6 +1194,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--base-seed", type=int, default=0)
     parser.add_argument("--run-id", type=int, default=None)
+    parser.add_argument("--task", choices=["gridworld", "bandit"], default="gridworld")
     parser.add_argument("--algo", choices=["dqn", "trpo"], default="dqn")
     parser.add_argument("--arch", choices=["mlp", "cnn"], default="mlp")
     parser.add_argument("--grid-size", type=int, default=8)
@@ -1163,6 +1205,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--sticky-action-prob", type=float, default=0.0)
     parser.add_argument("--slip-prob", type=float, default=0.0)
     parser.add_argument("--reward-noise-std", type=float, default=0.0)
+    parser.add_argument("--context-dim", type=int, default=16)
+    parser.add_argument("--bandit-actions", type=int, default=4)
+    parser.add_argument("--bandit-teacher-hidden", type=int, default=12)
+    parser.add_argument("--bandit-teacher-seed", type=int, default=17)
     parser.add_argument("--episodes", type=int, default=2000)
     parser.add_argument("--max-steps", type=int, default=64)
     parser.add_argument("--batch-size", type=int, default=64)
@@ -1216,6 +1262,14 @@ def main() -> None:
     if args.start is not None and args.end is not None:
         if args.start == args.end:
             raise ValueError("--start and --end must be different.")
+
+    if args.task == "bandit":
+        if args.algo != "trpo":
+            raise ValueError("The contextual bandit task currently requires --algo trpo.")
+        if args.arch != "mlp":
+            raise ValueError("The contextual bandit task currently requires --arch mlp.")
+        if args.max_steps != 1:
+            raise ValueError("The contextual bandit task requires --max-steps 1.")
 
     if not args.log_dir:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

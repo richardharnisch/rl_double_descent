@@ -5,6 +5,11 @@ We train a DQN/TRPO on a set of seeded gridworld environments (e.g., seeds 1-5) 
 evaluate on unseen seeds. We then sweep model sizes to observe performance
 curves as parameter count increases.
 
+The runner also supports a live contextual-bandit task for a short-horizon
+stochastic-MDP search. Bandit contexts are regenerated from episode seeds and
+reward noise is sampled by the environment on every action; no frozen
+observation/reward training table is used.
+
 ## Setup (uv)
 
 ```bash
@@ -39,8 +44,9 @@ The top-level log directory contains:
 - `curve.png`: train/test return vs parameter count plus FIM/parameter panel.
 
 Each run also records train/test evaluation return standard deviation, action
-entropy, and state-visitation coverage. Repeated stochastic evaluation episodes
-keep the seeded map fixed while transition randomness advances.
+entropy, and state-visitation coverage. Bandit runs additionally record the
+optimal-action rate. Repeated stochastic evaluation episodes keep the seeded
+task context fixed while transition randomness advances.
 
 This also logs:
 - `fim_trace`: Fisher trace estimated as the average of $\|\nabla_\theta \log \pi_\theta(a|s)\|^2$ over sampled state-action pairs.
@@ -69,6 +75,8 @@ Model size
 - `--arch` (default: `mlp`): Network architecture (`mlp` or `cnn`). For `cnn`, `--widths` controls conv channels and `--depths` controls the number of conv layers.
 
 Environment
+- `--task` (default: `gridworld`): Task choice (`gridworld` or `bandit`). The
+  bandit task requires `--algo trpo --arch mlp --max-steps 1`.
 - `--grid-size` (default: `8`): Square grid side length. Observation uses a per-tile one-hot encoding (4 channels) and is flattened. Also has 2-frame stacking.
 - `--obstacle-prob` (default: `0.2`): Bernoulli probability of a wall in each cell (except start/goal). Maps are regenerated per seed until solvable.
 - `--max-steps` (default: `64`): Maximum steps per episode before truncation (applies to training, eval, and video rollouts).
@@ -80,6 +88,12 @@ The observation is a 2-frame stack: two consecutive one-hot grids are flattened 
 - `--sticky-action-prob` (default: `0`): Probability that the previous action is executed.
 - `--slip-prob` (default: `0`): Probability that a uniformly random action is executed.
 - `--reward-noise-std` (default: `0`): Standard deviation of zero-mean online reward noise.
+- `--context-dim` (default: `16`): Observation dimension for the contextual bandit.
+- `--bandit-actions` (default: `4`): Number of bandit actions.
+- `--bandit-teacher-hidden` (default: `12`): Hidden width of the fixed nonlinear
+  teacher used to generate the bandit task's optimal action.
+- `--bandit-teacher-seed` (default: `17`): Seed for the bandit task teacher;
+  this changes the environment instance, not the independent training runs.
 
 Training
 - `--episodes` (default: `2000`): Training episodes per run (episodes are sampled across training seeds).
