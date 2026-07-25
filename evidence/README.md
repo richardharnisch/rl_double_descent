@@ -15,6 +15,8 @@ rl_dd.experiment`; no frozen observation or trajectory dataset was used.
 | `online_cnn_sticky_01p1` | CNN/TRPO, sticky actions 0.1, widths 2–32, 3 runs |
 | `online_cnn_sticky_01p1_confirm` | CNN/TRPO, sticky actions 0.1, widths 2–32, 5 runs, 50 held-out maps |
 | `online_cnn_rewardnoise_01` | CNN/TRPO, online reward noise 0.1, widths 2–32, 3 runs |
+| `online_cnn_rewardnoise_002` | CNN/TRPO, online reward noise 0.02, widths 2–32, 3 exploratory runs; analyzer pass did not reproduce |
+| `online_cnn_rewardnoise_002_confirm` | CNN/TRPO, online reward noise 0.02, widths 2–32, 5 runs, 50 held-out maps; analyzer false |
 | `online_cnn_randomcorners_01` | CNN/TRPO, seeded random start/goal corners, widths 2–32, 3 runs |
 | `online_cnn_depth_01` | CNN/TRPO, width 8, depths 1–5, 3 runs |
 | `online_episodic_01` | CNN/TRPO width 16/depth 2, 20,000 episodes, 1,000-episode checkpoints, 3 runs |
@@ -39,5 +41,8 @@ uv run --no-sync python scripts/analyze_episodic_dd.py \
   --fit-threshold 0.95 --practical-effect 0.10
 ```
 
-All saved analyses report `passed: false` under the fixed criterion. The
-interpretation and exact training commands are in `.cook/dd_report.md`.
+All confirmatory saved analyses report `passed: false` under the fixed
+criterion. The exploratory `online_cnn_rewardnoise_002` analysis passed on its
+first three runs, but its five-run confirmation did not reproduce that curve;
+both artifacts are retained. The interpretation and exact training commands
+are in `.cook/dd_report.md`.
