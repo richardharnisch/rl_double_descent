@@ -119,8 +119,19 @@ about `0.059` normalized and recovery about `0.041`, both below the practical
 effect gate. A two-step delayed-reward MDP with `gamma=0.9` reached training
 action-rate interpolation at widths 128–256, but its held-out return declined
 through width 256. Extending the delayed-MDP feature width through 1024 did
-not produce a persistent recovery. These are TD-estimation failures or
-ordinary overfitting, not demonstrated double descent.
+not produce a persistent recovery. Increasing the live training context count
+from 20 to 100 shifted the interpolation point to widths 192–512, with test
+return peaking near 256 and declining through the 768–1536 tail. These are
+TD-estimation failures or ordinary overfitting, not demonstrated double
+descent.
+
+A complete 20-context contrast sweep (widths 2–1024, three runs) produced the
+closest delayed-MDP candidate: training action rate reached `0.967` at width
+96, normalized held-out return rose to `0.670`, fell to `0.488` at width 512,
+and rebounded to `0.593` at width 768. The fresh analyzer still returned
+`passed: false`: the recovery did not remain above the dip through width 1024,
+and only the width-96 rise was uncertainty-supported. This is retained as a
+near miss, not as evidence of double descent.
 
 ## Diagnostics and artifact checks
 
@@ -159,6 +170,9 @@ The raw per-run files and generated analyses are in:
 - `testing/lstd_delayed_02/`
 - `testing/lstd_delayed_highwidth_01/`
 - `testing/lstd_delayed_highwidth_02/`
+- `testing/lstd_delayed_states_01/`
+- `testing/lstd_delayed_states_highwidth_01/`
+- `testing/lstd_delayed_contrast_full_01/`
 
 Each completed capacity directory contains raw `metrics.csv`, aggregate CSV,
 the curve, and `analysis.json`. The episodic directory contains one raw

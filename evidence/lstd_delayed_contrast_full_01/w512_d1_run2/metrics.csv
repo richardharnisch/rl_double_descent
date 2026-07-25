@@ -1,0 +1,2 @@
+width,depth,run,num_params,train_return,test_return,train_return_std,test_return_std,train_optimal_action_rate,test_optimal_action_rate,train_optimal_action_std,test_optimal_action_std,train_entropy,test_entropy,train_coverage,test_coverage,fim_trace
+512.0,1.0,2.0,512.0,0.9505457162204145,0.5388202346070362,0.14959987740255734,0.4994322538395498,1.0,0.565,0.0,0.4957569969249047,nan,nan,1.0,1.0,nan

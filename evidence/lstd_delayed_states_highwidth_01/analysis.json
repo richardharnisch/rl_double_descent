@@ -1,0 +1,18 @@
+{
+  "acceptance_criterion": {
+    "fit_threshold": 0.95,
+    "fit_field": "train_optimal_action_rate",
+    "practical_effect": 0.1,
+    "uncertainty": "each rise, drop, and recovery must exceed pooled 95% normal-approximation uncertainty",
+    "persistent_recovery": "all capacities from recovery through the end must stay at or above the dip mean"
+  },
+  "run_count_per_capacity": {
+    "768.0": 3,
+    "1024.0": 3,
+    "1536.0": 3
+  },
+  "candidate_count": 0,
+  "passed": false,
+  "passing_candidates": [],
+  "all_candidates": []
+}
