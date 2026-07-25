@@ -38,6 +38,10 @@ The top-level log directory contains:
 - `summary.csv`: aggregated metrics per parameter count (mean/std).
 - `curve.png`: train/test return vs parameter count plus FIM/parameter panel.
 
+Each run also records train/test evaluation return standard deviation, action
+entropy, and state-visitation coverage. Repeated stochastic evaluation episodes
+keep the seeded map fixed while transition randomness advances.
+
 This also logs:
 - `fim_trace`: Fisher trace estimated as the average of $\|\nabla_\theta \log \pi_\theta(a|s)\|^2$ over sampled state-action pairs.
 - Videos (GIFs) for seeds listed in `--video-seeds`, saved inside each run directory.
@@ -73,6 +77,9 @@ Environment
 - `--end` (default: unset): Goal corner index (0=top-left, 1=top-right, 2=bottom-right, 3=bottom-left). Unset means randomized.
 When one of `--start` or `--end` is unset, the other is sampled from the remaining corners; if both are unset, both corners are randomized (but always different).
 The observation is a 2-frame stack: two consecutive one-hot grids are flattened and concatenated.
+- `--sticky-action-prob` (default: `0`): Probability that the previous action is executed.
+- `--slip-prob` (default: `0`): Probability that a uniformly random action is executed.
+- `--reward-noise-std` (default: `0`): Standard deviation of zero-mean online reward noise.
 
 Training
 - `--episodes` (default: `2000`): Training episodes per run (episodes are sampled across training seeds).
@@ -121,6 +128,22 @@ Per-run episode CSVs and plots are always saved inside each run's log directory.
 
 FIM
 - `--fim-samples` (default: `64`): Number of (state, action) samples used to estimate the Fisher trace; `0` disables FIM logging.
+
+## Fixed-sweep analysis
+
+Analyze raw per-run capacity metrics with the fixed rise-dip-rise rule:
+
+```bash
+uv run --no-sync python scripts/analyze_online_dd.py \
+  --metrics testing/online_cnn_sweep_01/metrics.csv \
+  --out-dir testing/online_cnn_sweep_01/analysis \
+  --min-return -0.32 --max-return 0.959 \
+  --fit-threshold 0.95 --practical-effect 0.10
+```
+
+For long-run checkpoints, use `scripts/analyze_episodic_dd.py` with a glob of
+the raw `periodic_eval.csv` files. Both analyzers write aggregate CSV, a curve,
+and JSON containing every tested candidate and whether it passed.
 
 Sanity check (learnability)
 - `--sanity-check` (default: disabled): Run the obstacle-free learnability check before the main experiment.

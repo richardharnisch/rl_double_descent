@@ -1,0 +1,2 @@
+num_params,train_mean,train_std,test_mean,test_std,train_entropy_mean,train_entropy_std,test_entropy_mean,test_entropy_std,train_coverage_mean,train_coverage_std,test_coverage_mean,test_coverage_std,train_return_std_mean,train_return_std_std,test_return_std_mean,test_return_std_std
+7588.0,0.9589949493661166,0.0,-0.034722300457748025,0.27611626963756736,0.012484328171124015,0.006912865274203019,0.025998199886878386,0.022285768272478815,0.25296033681561925,0.0,0.14089787046206806,0.050128412310740625,0.0,0.0,0.3367635794326807,0.24053863347898674

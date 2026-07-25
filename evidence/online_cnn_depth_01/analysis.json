@@ -1,0 +1,72 @@
+{
+  "acceptance_criterion": {
+    "fit_threshold": 0.95,
+    "practical_effect": 0.1,
+    "uncertainty": "each rise, drop, and recovery must exceed pooled 95% normal-approximation uncertainty",
+    "persistent_recovery": "all capacities from recovery through the end must stay at or above the dip mean"
+  },
+  "run_count_per_capacity": {
+    "8.0": 3
+  },
+  "candidate_count": 4,
+  "passed": false,
+  "passing_candidates": [],
+  "all_candidates": [
+    {
+      "peak_width": 8.0,
+      "dip_width": 8.0,
+      "recovery_width": 8.0,
+      "initial_rise": 0.09788946617428482,
+      "drop": 0.030319905554212268,
+      "recovery_gain": 0.028713978050862954,
+      "fit_at_dip": 1.0,
+      "rise_supported_by_95ci": false,
+      "drop_supported_by_95ci": false,
+      "recovery_supported_by_95ci": false,
+      "persistent_recovery": true,
+      "passes": false
+    },
+    {
+      "peak_width": 8.0,
+      "dip_width": 8.0,
+      "recovery_width": 8.0,
+      "initial_rise": 0.09788946617428482,
+      "drop": 0.030319905554212268,
+      "recovery_gain": 0.026457558603037556,
+      "fit_at_dip": 1.0,
+      "rise_supported_by_95ci": false,
+      "drop_supported_by_95ci": false,
+      "recovery_supported_by_95ci": false,
+      "persistent_recovery": true,
+      "passes": false
+    },
+    {
+      "peak_width": 8.0,
+      "dip_width": 8.0,
+      "recovery_width": 8.0,
+      "initial_rise": 0.09788946617428482,
+      "drop": 0.0016059275033493137,
+      "recovery_gain": -0.0022564194478253974,
+      "fit_at_dip": 1.0,
+      "rise_supported_by_95ci": false,
+      "drop_supported_by_95ci": false,
+      "recovery_supported_by_95ci": false,
+      "persistent_recovery": false,
+      "passes": false
+    },
+    {
+      "peak_width": 8.0,
+      "dip_width": 8.0,
+      "recovery_width": 8.0,
+      "initial_rise": -0.030319905554212268,
+      "drop": -0.028713978050862954,
+      "recovery_gain": -0.0022564194478253974,
+      "fit_at_dip": 1.0,
+      "rise_supported_by_95ci": false,
+      "drop_supported_by_95ci": false,
+      "recovery_supported_by_95ci": false,
+      "persistent_recovery": false,
+      "passes": false
+    }
+  ]
+}

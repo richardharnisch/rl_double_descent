@@ -1,3 +1,145 @@
+# Online RL Double-Descent Search Report (2026-07-24)
+
+## Current conclusion
+
+No genuine online RL double-descent curve has been found in the completed local
+search. The negative result is evidence-backed, not a claim that double descent
+cannot occur in RL. Every completed avenue below was trained from live episodes;
+no frozen observation set or frozen trajectory labels were used.
+
+The repository now contains the reproducible environment controls, diagnostics,
+analysis scripts, launch configuration, and raw evidence under the ignored
+`testing/` work area. The tracked code is sufficient to regenerate every run.
+
+## Acceptance criterion fixed before curve selection
+
+For each capacity or checkpoint sweep, returns were normalized as
+`(return - min_return) / (max_return - min_return)`, using a task-specific
+no-progress floor and an oracle achievable-return estimate. A candidate had to
+show all of the following over the complete prespecified sweep:
+
+1. mean training fit at the dip at least `0.95`;
+2. an earlier rise, peak-to-dip drop, and dip-to-recovery gain each at least
+   `0.10` normalized return;
+3. each change larger than its pooled 95% normal-approximation uncertainty;
+4. recovery persistent through the remaining capacities/checkpoints.
+
+The candidate search was exhaustive over each fixed grid. No seed or curve
+segment was selected after inspection. The authoritative implementation is
+`scripts/analyze_online_dd.py`; episodic checkpoints use
+`scripts/analyze_episodic_dd.py`.
+
+## Main online results
+
+The first capacity path used CNN/TRPO, grid size 8, obstacle probability 0.1,
+fixed start/goal corners 0 and 2, 2,000 episodes per run, depth 2, widths
+`2,3,4,5,6,8,10,12,16,24,32`, three runs per width, and ten evaluation
+episodes per test map. Its normalized test means were approximately
+`0.081, 0.118, 0.156, 0.151, 0.253, 0.285, 0.180, 0.153, 0.227, 0.254,
+0.187`; the analysis result was `passed: false`. Training fit was near one from
+width 3 onward, but the apparent oscillations were not uncertainty-supported.
+
+Online stochasticity did not produce a valid curve:
+
+- Sticky actions `p=0.2`: test means ranged from about `0.198` to `0.294`
+  normalized, while training fit was below threshold at several widths.
+- Sticky actions `p=0.1`: the most suggestive segment was widths `8,10,12`,
+  with normalized test means about `0.263, 0.168, 0.329`; the preceding rise and
+  drop were below the fixed practical-effect rule. The result was false.
+- Zero-mean online reward noise with standard deviation `0.1`: training fit
+  remained unstable, with aggregate normalized means roughly `0.54` to `0.88`
+  across the sweep. It failed the interpolation prerequisite.
+
+Other online capacity paths were also negative:
+
+- DQN/CNN on a 4x4 grid, widths `2,3,4,6,8,12,16,24,32,48`, three runs:
+  training means ranged `0.45`–`0.98`; the curve was learning-instability,
+  not double descent.
+- CNN depth `1`–`5` at width 8, three runs: depths 1–4 interpolated training
+  maps, but test-return means remained uncertainty-dominated; depth 5 fell to
+  about `0.80` normalized training fit.
+- Random seeded start/goal corners: training fit reached approximately one,
+  but held-out return stayed at the no-progress floor across widths. This is a
+  distribution-generalization failure, not a recovery.
+
+The episodic path used fixed CNN width 16/depth 2, 20,000 episodes, checkpoints
+every 1,000 episodes, three independent runs, ten test episodes per map, and
+the same fixed maps. One run visually contained a rise near 2,000, a dip near
+5,000, and a late increase, but the other runs disagreed. The aggregate
+episodic analyzer found no candidate passing the effect and uncertainty gates.
+Training fit stayed at approximately `0.959` throughout, so failed learning
+was not the explanation; seed-to-seed checkpoint variability was.
+
+## Diagnostics and artifact checks
+
+Final run rows record parameter count, train/test return, return standard
+deviation, action entropy, visitation coverage, and optional FIM trace. In
+stochastic evaluation, the seeded map is held fixed while transition RNG
+advances between repeated episodes. The environment tests cover seeded reward
+noise, sticky-action reset semantics, and map-preserving resets.
+
+The raw per-run files and generated analyses are in:
+
+- `testing/online_cnn_sweep_01/`
+- `testing/online_dqn_sweep_01/`
+- `testing/online_cnn_sticky_01/`
+- `testing/online_cnn_sticky_01p1/`
+- `testing/online_cnn_rewardnoise_01/`
+- `testing/online_cnn_randomcorners_01/`
+- `testing/online_cnn_depth_01/`
+- `testing/online_episodic_01/`
+
+Each completed capacity directory contains raw `metrics.csv`, aggregate CSV,
+the curve, and `analysis.json`. The episodic directory contains one raw
+`periodic_eval.csv` per run plus its aggregate analysis.
+
+## Reproduction
+
+Dependencies are managed with uv. Basic verification is:
+
+```bash
+uv run --no-sync python -m unittest discover -v
+uv run --no-sync python -m compileall -q src tests scripts
+```
+
+A representative online capacity run is:
+
+```bash
+uv run --no-sync python -m rl_dd.experiment \
+  --algo trpo --arch cnn --grid-size 8 \
+  --widths 2,3,4,5,6,8,10,12,16,24,32 --depths 2 --runs 3 \
+  --base-seed 1000 --train-seeds 1-5 --test-seeds 6-15 \
+  --episodes 2000 --max-steps 32 --obstacle-prob 0.1 \
+  --start 0 --end 2 --trpo-batch-episodes 20 \
+  --early-stop-episodes 0 --eval-episodes 10 --fim-samples 0 \
+  --video-seeds none --no-save-model --cpu \
+  --log-dir testing/online_cnn_sweep_01
+uv run --no-sync python -m rl_dd.experiment \
+  --collect-only --log-dir testing/online_cnn_sweep_01
+uv run --no-sync python scripts/analyze_online_dd.py \
+  --metrics testing/online_cnn_sweep_01/metrics.csv \
+  --out-dir testing/online_cnn_sweep_01/analysis \
+  --min-return -0.32 --max-return 0.959 \
+  --fit-threshold 0.95 --practical-effect 0.10
+```
+
+The cluster launcher is `scripts/run_experiment.slurm`; it uses `uv run
+--no-sync` in array workers and exposes the sticky-action, slip, and reward-noise
+controls. The launch command is ready for a larger GPU sweep, but no claim of
+success is made from that unrun configuration.
+
+## Next staged experiment if more compute becomes available
+
+The highest-value follow-up is a GPU-confirmatory sweep around the only
+near-effect region (`p=0.1`, widths 6–16), with the full width grid retained,
+five or more runs per capacity, at least 50 fixed test maps, and per-map raw
+returns. It should also add a second independently generated train/test split.
+The acceptance criterion above must remain unchanged. The current local
+blocker is not software correctness; it is the compute cost of enough runs and
+test maps to resolve the residual within-condition variance. Until that staged
+experiment is run, the scientifically correct conclusion remains “no genuine
+double descent demonstrated.”
+
 # Why This Project Did Not Find Double Descent — and Where to Look Next
 
 ## 1. Background

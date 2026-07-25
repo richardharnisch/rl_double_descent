@@ -31,6 +31,10 @@ TRAIN_SEEDS="1-100"
 TEST_SEEDS="101-200"
 EPISODES=250000
 LOG_EVERY=5000
+EVAL_EPISODES=10
+STICKY_ACTION_PROB=0.0
+SLIP_PROB=0.0
+REWARD_NOISE_STD=0.0
 LOG_DIR="results/cnn_16x16_100seed_250k"
 
 if [[ "${1:-}" == "--collect-only" ]]; then
@@ -70,10 +74,14 @@ DEPTH="${DEPTHS[$DEPTH_INDEX]}"
   --runs 1 \
   --run-id "${RUN_ID}" \
   --episodes "${EPISODES}" \
+  --eval-episodes "${EVAL_EPISODES}" \
   --video-fps 12 \
   --early-stop-episodes 0 \
   --start 0 \
   --end 2 \
+  --sticky-action-prob "${STICKY_ACTION_PROB}" \
+  --slip-prob "${SLIP_PROB}" \
+  --reward-noise-std "${REWARD_NOISE_STD}" \
   --log-dir "${LOG_DIR}" \
   --widths "${WIDTH}" \
   --log-every "${LOG_EVERY}"
