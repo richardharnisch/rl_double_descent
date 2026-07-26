@@ -125,6 +125,35 @@ return peaking near 256 and declining through the 768–1536 tail. These are
 TD-estimation failures or ordinary overfitting, not demonstrated double
 descent.
 
+The live LSTD implementation was then tightened for a fair capacity
+comparison: random-feature projections are nested across widths for each
+learner seed, so a wider estimator contains the exact narrower feature map.
+The resulting five-run few-context confirmation covered widths 2 through
+1536. Its strongest aggregate interpolation dip was normalized test return
+`0.389` at width 64 to `0.162` at width 256, followed by `0.369` at width
+1536. The analyzer still returned `passed: false`: the pre-peak rise was too
+small and the supported tail recovery started too late to satisfy the full
+criterion. This is a reproducible near miss, not evidence selected from the
+earlier non-nested exploratory runs.
+
+A second five-run confirmation used teacher seed 2, zero ridge, the same five
+live training contexts, and a solve interval of 1,000 transitions. It produced
+a sharper dip, with normalized test return `0.682` at width 64, `0.270` at
+width 192, and `0.311` at width 1536. The complete analyzer remained false:
+the recovery was not persistent and the qualifying adjacent rise was absent.
+Teacher seed 0 gave a similar exploratory one-run rise and dip, but its exact
+five-run confirmation had means `0.514` at width 48, `0.324` at width 192,
+and `0.289` at width 1536, again with no passing candidate. A deterministic
+reward control changed the fluctuations but did not establish a persistent
+return recovery.
+
+The new continuous-payoff contextual bandit was also tested as a live online
+control. A five-teacher, three-learner-seed family confirmation used nested
+random features, five live training contexts, and widths 16–512. The pooled
+test means ranged from `0.299` to `0.383` without a fixed-criterion pass. This
+rules out interpreting the delayed-MDP result as an artifact of one unusual
+reward scale or action encoding.
+
 A complete 20-context contrast sweep (widths 2–1024, three runs) produced the
 closest delayed-MDP candidate: training action rate reached `0.967` at width
 96, normalized held-out return rose to `0.670`, fell to `0.488` at width 512,
@@ -180,6 +209,10 @@ The raw per-run files and generated analyses are in:
 - `testing/lstd_delayed_states_highwidth_01/`
 - `testing/lstd_delayed_contrast_full_01/`
 - `testing/lstd_delayed_states_tail_01/`
+- `testing/lstd_delayed_fewstates_nested_ridge0_full_confirm_01/`
+- `testing/lstd_delayed_teacher2_nested_solve1000_confirm_01/`
+- `testing/lstd_delayed_teacher0_nested_solve1000_confirm_01/`
+- `testing/continuous_bandit_family_confirm_01/`
 
 Each completed capacity directory contains raw `metrics.csv`, aggregate CSV,
 the curve, and `analysis.json`. The episodic directory contains one raw
@@ -233,6 +266,25 @@ uv run --no-sync python scripts/analyze_online_dd.py \
   --out-dir testing/lstd_delayed_01/analysis --min-return 0 --max-return 1 \
   --fit-field train_optimal_action_rate --fit-threshold .95 \
   --practical-effect .10
+```
+
+The strongest fair-capacity confirmation can be regenerated with:
+
+```bash
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 uv run --no-sync \
+  python scripts/run_online_lstd_bandit.py --task delayed_mdp \
+  --widths 8,12,16,24,32,48,64,96,128,192,256,384,512,768,1024,1536 \
+  --runs 5 --base-seed 15000 --train-seeds 1-5 --test-seeds 6-220 \
+  --context-dim 4 --bandit-actions 4 --bandit-teacher-hidden 2 \
+  --bandit-teacher-seed 2 --reward-noise-std .1 --episodes 1000 \
+  --eval-episodes 20 --epsilon-start 1 --epsilon-end .1 \
+  --epsilon-decay 500 --gamma .9 --ridge 0 --solve-every 1000 \
+  --log-dir testing/lstd_delayed_teacher2_nested_solve1000_confirm_01
+uv run --no-sync python scripts/analyze_online_dd.py \
+  --metrics testing/lstd_delayed_teacher2_nested_solve1000_confirm_01/metrics.csv \
+  --out-dir testing/lstd_delayed_teacher2_nested_solve1000_confirm_01/analysis \
+  --min-return 0 --max-return 1 --fit-field train_optimal_action_rate \
+  --fit-threshold .95 --practical-effect .10
 ```
 
 ## Next staged experiment if more compute becomes available
