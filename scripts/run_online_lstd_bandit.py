@@ -8,6 +8,10 @@ from typing import Iterable
 import numpy as np
 
 from rl_dd.bandit import ContextualBanditConfig, ContextualBanditEnv
+from rl_dd.continuous_bandit import (
+    ContinuousContextualBanditConfig,
+    ContinuousContextualBanditEnv,
+)
 from rl_dd.delayed_mdp import DelayedContextMDPConfig, DelayedContextMDPEnv
 from rl_dd.lstd import OnlineLSTDQ
 
@@ -111,7 +115,9 @@ def train_one(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Online random-feature LSTD-Q bandit sweep")
     parser.add_argument("--widths", default="2,4,8,16,32,64,128,256")
-    parser.add_argument("--task", choices=["bandit", "delayed_mdp"], default="bandit")
+    parser.add_argument(
+        "--task", choices=["bandit", "continuous_bandit", "delayed_mdp"], default="bandit"
+    )
     parser.add_argument("--runs", type=int, default=3)
     parser.add_argument("--base-seed", type=int, default=0)
     parser.add_argument("--train-seeds", default="1-20")
@@ -121,6 +127,7 @@ def main() -> None:
     parser.add_argument("--bandit-teacher-hidden", type=int, default=2)
     parser.add_argument("--bandit-teacher-seed", type=int, default=3)
     parser.add_argument("--reward-noise-std", type=float, default=0.5)
+    parser.add_argument("--continuous-reward-distance-scale", type=float, default=1.0)
     parser.add_argument("--episodes", type=int, default=200)
     parser.add_argument("--eval-episodes", type=int, default=20)
     parser.add_argument("--epsilon-start", type=float, default=1.0)
@@ -150,6 +157,18 @@ def main() -> None:
                         teacher_hidden=args.bandit_teacher_hidden,
                         teacher_seed=args.bandit_teacher_seed,
                         reward_noise_std=args.reward_noise_std,
+                    ),
+                    seed=run_seed,
+                )
+            elif args.task == "continuous_bandit":
+                env = ContinuousContextualBanditEnv(
+                    ContinuousContextualBanditConfig(
+                        context_dim=args.context_dim,
+                        action_dim=args.bandit_actions,
+                        teacher_hidden=args.bandit_teacher_hidden,
+                        teacher_seed=args.bandit_teacher_seed,
+                        reward_noise_std=args.reward_noise_std,
+                        reward_distance_scale=args.continuous_reward_distance_scale,
                     ),
                     seed=run_seed,
                 )

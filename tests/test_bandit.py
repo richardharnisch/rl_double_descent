@@ -6,6 +6,10 @@ import numpy as np
 import torch
 
 from rl_dd.bandit import ContextualBanditConfig, ContextualBanditEnv
+from rl_dd.continuous_bandit import (
+    ContinuousContextualBanditConfig,
+    ContinuousContextualBanditEnv,
+)
 from rl_dd.train import build_network
 from rl_dd.trpo import build_policy, build_value
 from rl_dd.train import count_parameters
@@ -53,6 +57,30 @@ class ContextualBanditTests(unittest.TestCase):
         self.assertTrue(terminated)
         self.assertFalse(truncated)
         self.assertEqual(step_info["correct"], 1.0)
+
+    def test_continuous_bandit_reward_is_live_and_bounded_without_noise(self) -> None:
+        env = ContinuousContextualBanditEnv(
+            ContinuousContextualBanditConfig(
+                context_dim=4, action_dim=5, reward_noise_std=0.0
+            ),
+            seed=0,
+        )
+        _, info = env.reset(seed=11)
+        reward = env.step(info["optimal_action"])[1]
+        self.assertGreaterEqual(reward, 0.0)
+        self.assertLessEqual(reward, 1.0)
+        env.reset(options={"keep_context": True})
+        noisy_env = ContinuousContextualBanditEnv(
+            ContinuousContextualBanditConfig(
+                context_dim=4, action_dim=5, reward_noise_std=1.0
+            ),
+            seed=0,
+        )
+        _, noisy_info = noisy_env.reset(seed=11)
+        reward_one = noisy_env.step(noisy_info["optimal_action"])[1]
+        noisy_env.reset(options={"keep_context": True})
+        reward_two = noisy_env.step(noisy_info["optimal_action"])[1]
+        self.assertNotEqual(reward_one, reward_two)
 
     def test_random_feature_policy_has_frozen_map_and_trainable_head(self) -> None:
         policy = build_policy(4, 4, [16], torch.device("cpu"), arch="random_features")
