@@ -15,6 +15,7 @@ from rl_dd.trpo import build_policy, build_value
 from rl_dd.train import count_parameters
 from rl_dd.lstd import OnlineLSTDQ
 from rl_dd.delayed_mdp import DelayedContextMDPConfig, DelayedContextMDPEnv
+from rl_dd.smooth_bandit import SmoothContextualBanditConfig, SmoothContextualBanditEnv
 
 
 class ContextualBanditTests(unittest.TestCase):
@@ -82,6 +83,18 @@ class ContextualBanditTests(unittest.TestCase):
         reward_two = noisy_env.step(noisy_info["optimal_action"])[1]
         self.assertNotEqual(reward_one, reward_two)
 
+    def test_smooth_bandit_has_live_bounded_payoff(self) -> None:
+        env = SmoothContextualBanditEnv(
+            SmoothContextualBanditConfig(reward_noise_std=0.0), seed=0
+        )
+        _, info = env.reset(seed=11)
+        _, reward, terminated, truncated, step_info = env.step(info["optimal_action"])
+        self.assertGreaterEqual(reward, 0.0)
+        self.assertLessEqual(reward, 1.0)
+        self.assertTrue(terminated)
+        self.assertFalse(truncated)
+        self.assertIn("target", step_info)
+
     def test_random_feature_policy_has_frozen_map_and_trainable_head(self) -> None:
         policy = build_policy(4, 4, [16], torch.device("cpu"), arch="random_features")
         value = build_value(4, [16], torch.device("cpu"), arch="random_features")
@@ -117,6 +130,34 @@ class ContextualBanditTests(unittest.TestCase):
         narrow = OnlineLSTDQ(4, 3, 8, ridge=1e-2, seed=7)
         wide = OnlineLSTDQ(4, 3, 16, ridge=1e-2, seed=7)
         np.testing.assert_array_equal(narrow._projection, wide._projection[:, :8])
+
+    def test_rff_features_are_nested_across_widths(self) -> None:
+        narrow = OnlineLSTDQ(4, 3, 8, ridge=1e-2, seed=7, feature_map="rff")
+        wide = OnlineLSTDQ(4, 3, 16, ridge=1e-2, seed=7, feature_map="rff")
+        observation = np.ones(4, dtype=np.float32)
+        np.testing.assert_array_equal(
+            narrow.features(observation, 1), wide.features(observation, 1)[:8]
+        )
+
+    def test_relu_features_are_nested_across_widths(self) -> None:
+        narrow = OnlineLSTDQ(4, 3, 8, ridge=1e-2, seed=7, feature_map="relu")
+        wide = OnlineLSTDQ(4, 3, 16, ridge=1e-2, seed=7, feature_map="relu")
+        observation = np.ones(4, dtype=np.float32)
+        np.testing.assert_array_equal(
+            narrow.features(observation, 1), wide.features(observation, 1)[:8]
+        )
+
+    def test_separate_action_features_are_blocked_and_counted(self) -> None:
+        estimator = OnlineLSTDQ(
+            4, 3, 8, ridge=1e-2, seed=7, feature_map="relu", separate_action_features=True
+        )
+        observation = np.ones(4, dtype=np.float32)
+        first = estimator.features(observation, 0)
+        second = estimator.features(observation, 1)
+        self.assertEqual(first.size, 24)
+        self.assertEqual(estimator.effective_parameter_count, 24)
+        self.assertEqual(np.count_nonzero(first[8:]), 0)
+        self.assertEqual(np.count_nonzero(second[:8]), 0)
 
     def test_delayed_mdp_has_bootstrap_transition(self) -> None:
         env = DelayedContextMDPEnv(

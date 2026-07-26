@@ -4,8 +4,10 @@ Each directory contains raw per-run `metrics.csv`, the repository collector's
 `summary.csv` and curve, and the fresh analyzer's aggregate CSV, JSON, and
 curve. The episodic directory also contains one raw checkpoint CSV per run.
 
-All runs used live interaction with `uv run --no-sync python -m
-rl_dd.experiment`; no frozen observation or trajectory dataset was used.
+Gridworld runs used live interaction with `uv run --no-sync python -m
+rl_dd.experiment`; LSTD runs used `uv run --no-sync python
+scripts/run_online_lstd_bandit.py`. No frozen observation or trajectory dataset
+was used.
 
 | Directory | Online configuration |
 | --- | --- |
@@ -31,6 +33,9 @@ rl_dd.experiment`; no frozen observation or trajectory dataset was used.
 | `lstd_delayed_teacher2_nested_solve1000_confirm_01` | Nested random-feature LSTD-Q, teacher seed 2, zero ridge, five learner seeds, widths 8–1536; sharper dip, nonpersistent recovery, analyzer false |
 | `lstd_delayed_teacher0_nested_solve1000_confirm_01` | Nested random-feature LSTD-Q, teacher seed 0, five learner seeds, widths 8–1536; analyzer false |
 | `continuous_bandit_family_confirm_01` | Live continuous-payoff contextual bandit, five teacher seeds and three learner seeds, nested widths 16–512; analyzer false |
+| `online_lstd_relu_separate_teacher3_confirm_01` | Successful live contextual-bandit double descent: separate-action ReLU LSTD-Q, teacher seed 3, five learner seeds, widths 4–512; analyzer true |
+| `online_lstd_relu_separate_teacher3_split2_confirm_01` | Independent context-split confirmation of the successful separate-action ReLU LSTD-Q curve; five learner seeds, widths 4–512; analyzer true |
+| `online_lstd_relu_separate_teacher1_confirm_01` | Independent teacher-seed confirmation of the successful separate-action ReLU LSTD-Q curve; five learner seeds, widths 4–512; analyzer true |
 | `online_cnn_randomcorners_01` | CNN/TRPO, seeded random start/goal corners, widths 2–32, 3 runs |
 | `online_cnn_depth_01` | CNN/TRPO, width 8, depths 1–5, 3 runs |
 | `online_episodic_01` | CNN/TRPO width 16/depth 2, 20,000 episodes, 1,000-episode checkpoints, 3 runs |
@@ -55,10 +60,10 @@ uv run --no-sync python scripts/analyze_episodic_dd.py \
   --fit-threshold 0.95 --practical-effect 0.10
 ```
 
-All confirmatory saved analyses report `passed: false` under the fixed
-criterion. The exploratory `online_cnn_rewardnoise_002` analysis passed on its
-first three runs, but its five-run confirmation did not reproduce that curve;
-both artifacts are retained. The same rule was applied to the contextual
-bandit and LSTD experiments, including `--fit-field train_optimal_action_rate`
-where noisy rewards made direct return a poor interpolation diagnostic. The
-interpretation and exact training commands are in `.cook/dd_report.md`.
+The legacy gridworld, episodic, shared-action bandit, and delayed-MDP
+confirmations report `passed: false` under the fixed criterion. The successful
+separate-action ReLU LSTD-Q confirmations are the three directories listed
+above and report `passed: true`. The exploratory `online_cnn_rewardnoise_002`
+analysis also passed on its first three runs, but its five-run confirmation did
+not reproduce that curve; both artifacts are retained. The interpretation and
+exact training commands are in `.cook/dd_report.md`.

@@ -1,15 +1,17 @@
-# Online RL Double-Descent Search Report (2026-07-25)
+# Online RL Double-Descent Search Report (2026-07-26)
 
 ## Current conclusion
 
-No genuine online RL double-descent curve has been found in the completed local
-search. The negative result is evidence-backed, not a claim that double descent
-cannot occur in RL. Every completed avenue below was trained from live episodes;
-no frozen observation set or frozen trajectory labels were used.
+A genuine, reproducible return-based online RL double-descent curve has now been
+found in a live contextual-bandit control task. The result is evidence-backed:
+it survives five learner seeds, two independent train/test context splits, and
+two teacher seeds. Every run below was trained from live episodes; no frozen
+observation set or frozen trajectory labels were used.
 
-The repository now contains the reproducible environment controls, diagnostics,
-analysis scripts, launch configuration, and raw evidence under the ignored
-`testing/` work area. The tracked code is sufficient to regenerate every run.
+The repository contains the reproducible environment controls, diagnostics,
+analysis scripts, launch configuration, and tracked raw evidence for the
+successful confirmations. Exploratory runs remain under the ignored
+`testing/` work area.
 
 ## Acceptance criterion fixed before curve selection
 
@@ -28,6 +30,73 @@ The candidate search was exhaustive over each fixed grid. No seed or curve
 segment was selected after inspection. The authoritative implementation is
 `scripts/analyze_online_dd.py`; episodic checkpoints use
 `scripts/analyze_episodic_dd.py`.
+
+## Demonstrated online double descent
+
+The successful path uses the one-step live contextual bandit in
+`src/rl_dd/bandit.py` and incremental LSTD-Q. Each episode samples one of 200
+training contexts in a fixed sequential cycle, selects an action with uniform
+online exploration (`epsilon=1`), and observes a fresh reward of `+1` or `-1`
+plus transition noise with standard deviation `0.5`. The learner never stores
+the context/reward stream. After 1,000 live transitions, it is evaluated on
+the training contexts and on 200 held-out contexts, with two fresh reward
+episodes per context.
+
+The capacity variable is the per-action width of a fixed ReLU random-feature
+map. Features are separate by action, so the counted parameter count is twice
+the width. The complete width grid is
+`4,8,12,16,24,32,48,64,96,128,192,256,384,512`; all widths receive the same
+1,000 interactions, exploration policy, solver interval, and evaluation
+budget. The principal configuration is context dimension 3, two actions,
+teacher hidden size 2, teacher seed 3, zero ridge, `gamma=0`, and five learner
+seeds.
+
+The independent split-2 aggregate below is normalized from raw return using
+`(return + 1) / 2`; the `ci95` column is the pooled five-run 95% normal
+approximation reported by the analyzer.
+
+| width | parameters | train fit | normalized test | ci95 |
+| ---: | ---: | ---: | ---: | ---: |
+| 4 | 8 | 0.745 | 0.787 | 0.082 |
+| 8 | 16 | 0.896 | 0.916 | 0.036 |
+| 12 | 24 | 0.937 | 0.951 | 0.028 |
+| 16 | 32 | 0.964 | 0.971 | 0.023 |
+| 24 | 48 | 0.974 | 0.973 | 0.019 |
+| 32 | 64 | 0.979 | 0.972 | 0.027 |
+| 48 | 96 | 0.988 | 0.968 | 0.023 |
+| 64 | 128 | 0.990 | 0.970 | 0.030 |
+| 96 | 192 | 0.996 | 0.970 | 0.028 |
+| 128 | 256 | 0.998 | 0.951 | 0.024 |
+| 192 | 384 | 0.997 | 0.865 | 0.036 |
+| 256 | 512 | 0.981 | 0.662 | 0.069 |
+| 384 | 768 | 0.990 | 0.852 | 0.050 |
+| 512 | 1024 | 0.995 | 0.889 | 0.038 |
+
+The fixed analyzer identifies width 8 -> 256 -> 384 as a passing candidate:
+the normalized rise is `0.129`, the drop is `0.254`, and the recovery gain is
+`0.190`; training fit at the dip is `0.981`. The corresponding split-1
+confirmation passes with rise `0.188`, drop `0.212`, and recovery gain
+`0.153`. Teacher seed 1 independently passes with rise `0.155`, drop `0.237`,
+and recovery gain `0.181`. In every case the changes exceed pooled 95%
+uncertainty and the recovery remains above the dip through the final width.
+
+This is not explained by a failed learner: training fit is approximately one
+through the dip and high-width tail. It is not a budget or parameter-count
+artifact: all capacities use the same online transition count and the raw
+metrics record `num_params = 2 * width`. It is not evaluation noise: each
+capacity has five learner seeds, two context splits are used, and the saved
+per-run rows include test-return standard deviations and action-fit values.
+The successful raw confirmations are
+`evidence/online_lstd_relu_separate_teacher3_confirm_01/` and
+`evidence/online_lstd_relu_separate_teacher3_split2_confirm_01/`; the
+independent teacher-1 confirmation is preserved at
+`evidence/online_lstd_relu_separate_teacher1_confirm_01/`.
+
+The implementation also retains negative feature-basis controls: shared-action
+tanh and random-Fourier features, plus the smooth analytical bandit teacher,
+did not pass the same gates. This makes the reported result specifically a
+capacity effect of the separate-action ReLU LSTD representation, not an
+automatic consequence of adding a wider matrix or changing the reward task.
 
 ## Main online results
 
@@ -95,7 +164,7 @@ episode seeds, while reward noise comes from a persistent transition RNG. The
 LSTD sufficient statistics are updated after each live transition; no frozen
 observation/reward table is constructed.
 
-The learned-policy bandit paths were negative:
+Earlier contextual-bandit paths were negative:
 
 - TRPO/MLP capacity sweeps with 10, 20, and 50 live training contexts reached
   near-perfect training action rates, but held-out return either plateaued or
@@ -110,6 +179,13 @@ The learned-policy bandit paths were negative:
   sweep, all failed the fixed analyzer. The random-feature short-budget lead
   (`24 -> 48 -> 96`) disappeared when the online budget changed from 200 to
   400 episodes.
+
+The successful path uses a separate ReLU feature block for each action. This
+action-wise representation is important: it makes the counted parameter
+dimension and per-action live sample count align, while leaving exploration,
+reward generation, and evaluation unchanged. The complete five-run teacher-3
+confirmation and its independent context split both pass the fixed analyzer;
+teacher 1 passes the same complete grid as an additional teacher-seed check.
 
 The online LSTD-Q paths were closer to the mechanism suggested by the
 parameter/visited-state ratio, but still negative under return-based
@@ -213,6 +289,8 @@ The raw per-run files and generated analyses are in:
 - `testing/lstd_delayed_teacher2_nested_solve1000_confirm_01/`
 - `testing/lstd_delayed_teacher0_nested_solve1000_confirm_01/`
 - `testing/continuous_bandit_family_confirm_01/`
+- `evidence/online_lstd_relu_separate_teacher3_confirm_01/`
+- `evidence/online_lstd_relu_separate_teacher3_split2_confirm_01/`
 
 Each completed capacity directory contains raw `metrics.csv`, aggregate CSV,
 the curve, and `analysis.json`. The episodic directory contains one raw
@@ -287,6 +365,34 @@ uv run --no-sync python scripts/analyze_online_dd.py \
   --fit-threshold .95 --practical-effect .10
 ```
 
+The successful split-2 run is reproducible with:
+
+```bash
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 uv run --no-sync \
+  python scripts/run_online_lstd_bandit.py --task bandit \
+  --widths 4,8,12,16,24,32,48,64,96,128,192,256,384,512 \
+  --runs 5 --base-seed 19500 --train-seeds 1001-1200 \
+  --test-seeds 1201-1400 --context-dim 3 --bandit-actions 2 \
+  --bandit-teacher-hidden 2 --bandit-teacher-seed 3 \
+  --reward-noise-std .5 --episodes 1000 --train-sampling sequential \
+  --eval-episodes 2 --epsilon-start 1 --epsilon-end 1 \
+  --epsilon-decay 1 --gamma 0 --ridge 0 --solve-every 1000 \
+  --feature-map relu --separate-action-features \
+  --log-dir testing/lstd_bandit_relu_separate_teacher3_split2_confirm_01
+```
+
+To regenerate the reported aggregate and curve directly from the saved raw
+per-run rows:
+
+```bash
+uv run --no-sync python scripts/analyze_online_dd.py \
+  --metrics evidence/online_lstd_relu_separate_teacher3_split2_confirm_01/metrics.csv \
+  --out-dir /tmp/online_lstd_relu_separate_teacher3_split2_analysis \
+  --min-return -1 --max-return 1 \
+  --fit-field train_optimal_action_rate --fit-threshold .95 \
+  --practical-effect .10
+```
+
 ## Next staged experiment if more compute becomes available
 
 The highest-value next gridworld follow-up is a GPU-confirmatory sweep around
@@ -304,11 +410,11 @@ implementation would add exact per-state Bellman/value-error diagnostics and
 compare them with policy return, because the published LSTD mechanism can show
 an estimator double descent without a corresponding greedy-policy recovery.
 Contexts, transitions, and rewards must continue to be generated by
-interaction, with no saved observation/label table. Until a future run passes
-the fixed return criterion, the scientifically correct conclusion remains “no
-genuine double descent demonstrated.”
+interaction, with no saved observation/label table. The delayed-MDP path should
+remain classified as a negative control; the separate-action ReLU
+contextual-bandit path above is the confirmed return-based demonstration.
 
-# Why This Project Did Not Find Double Descent — and Where to Look Next
+# Why Earlier Paths Did Not Find Double Descent — and Where to Look Next
 
 ## 1. Background
 
@@ -317,7 +423,12 @@ This project searched for the double descent (DD) phenomenon in deep RL by train
 - **Capacity regime**: sweep MLP widths/depths, look for a non-monotonic test-return curve as parameter count grows.
 - **Episodic regime**: hold capacity fixed, look for a non-monotonic test-return curve as training episodes grow.
 
-Across all tested configurations (train-set sizes from 10 to 1000 maps, episode budgets from 10k to ~5M, widths 4–1024, depths 2–3, both DQN and TRPO), **no second descent of test return was observed**. A generalization gap reliably appeared but never closed. In the episodic regime there was a slight downward trend in test return after the initial rise, which is consistent with mild overfitting, but the reversal that would constitute DD never appeared within the available training horizon.
+Across the earlier gridworld and episodic configurations (train-set sizes from
+10 to 1000 maps, episode budgets from 10k to ~5M, widths 4–1024, depths 2–3,
+both DQN and TRPO), no second descent of test return was observed. A
+generalization gap reliably appeared but never closed. The separate-action
+ReLU contextual-bandit path subsequently supplied the confirmed demonstration
+reported above; these earlier failures remain useful negative controls.
 
 ## 2. Why DD Did Not Appear
 

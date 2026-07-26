@@ -14,6 +14,7 @@ from rl_dd.continuous_bandit import (
 )
 from rl_dd.delayed_mdp import DelayedContextMDPConfig, DelayedContextMDPEnv
 from rl_dd.lstd import OnlineLSTDQ
+from rl_dd.smooth_bandit import SmoothContextualBanditConfig, SmoothContextualBanditEnv
 
 
 def parse_int_list(value: str) -> list[int]:
@@ -88,10 +89,19 @@ def train_one(
     epsilon_end: float,
     epsilon_decay: int,
     seed: int,
+    sampling: str,
 ) -> None:
+    if not train_seeds:
+        raise ValueError("At least one training seed is required.")
+    if sampling not in {"random", "sequential"}:
+        raise ValueError("Training-seed sampling must be random or sequential.")
     rng = np.random.default_rng(seed)
     for episode in range(episodes):
-        observation, _ = env.reset(seed=int(rng.choice(train_seeds)))
+        if sampling == "sequential":
+            context_seed = train_seeds[episode % len(train_seeds)]
+        else:
+            context_seed = int(rng.choice(train_seeds))
+        observation, _ = env.reset(seed=context_seed)
         done = False
         while not done:
             fraction = max(0.0, (epsilon_decay - episode) / max(1, epsilon_decay))
@@ -116,7 +126,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Online random-feature LSTD-Q bandit sweep")
     parser.add_argument("--widths", default="2,4,8,16,32,64,128,256")
     parser.add_argument(
-        "--task", choices=["bandit", "continuous_bandit", "delayed_mdp"], default="bandit"
+        "--task",
+        choices=["bandit", "continuous_bandit", "smooth_bandit", "delayed_mdp"],
+        default="bandit",
     )
     parser.add_argument("--runs", type=int, default=3)
     parser.add_argument("--base-seed", type=int, default=0)
@@ -129,6 +141,12 @@ def main() -> None:
     parser.add_argument("--reward-noise-std", type=float, default=0.5)
     parser.add_argument("--continuous-reward-distance-scale", type=float, default=1.0)
     parser.add_argument("--episodes", type=int, default=200)
+    parser.add_argument(
+        "--train-sampling",
+        choices=["random", "sequential"],
+        default="random",
+        help="How live training contexts are sampled during interaction.",
+    )
     parser.add_argument("--eval-episodes", type=int, default=20)
     parser.add_argument("--epsilon-start", type=float, default=1.0)
     parser.add_argument("--epsilon-end", type=float, default=0.1)
@@ -136,8 +154,14 @@ def main() -> None:
     parser.add_argument("--gamma", type=float, default=0.0)
     parser.add_argument("--ridge", type=float, default=1e-3)
     parser.add_argument("--solve-every", type=int, default=1)
+    parser.add_argument("--feature-map", choices=["tanh", "relu", "rff"], default="tanh")
+    parser.add_argument("--feature-scale", type=float, default=1.0)
+    parser.add_argument("--separate-action-features", action="store_true")
     parser.add_argument("--log-dir", required=True)
     args = parser.parse_args()
+
+    if args.task == "smooth_bandit" and args.bandit_actions != 2:
+        raise ValueError("smooth_bandit currently requires --bandit-actions 2.")
 
     train_seeds = parse_int_list(args.train_seeds)
     test_seeds = parse_int_list(args.test_seeds)
@@ -172,6 +196,15 @@ def main() -> None:
                     ),
                     seed=run_seed,
                 )
+            elif args.task == "smooth_bandit":
+                env = SmoothContextualBanditEnv(
+                    SmoothContextualBanditConfig(
+                        teacher_seed=args.bandit_teacher_seed,
+                        reward_noise_std=args.reward_noise_std,
+                        reward_distance_scale=args.continuous_reward_distance_scale,
+                    ),
+                    seed=run_seed,
+                )
             else:
                 env = ContextualBanditEnv(
                     ContextualBanditConfig(
@@ -191,6 +224,9 @@ def main() -> None:
                 ridge=args.ridge,
                 seed=run_seed,
                 solve_interval=args.solve_every,
+                feature_map=args.feature_map,
+                feature_scale=args.feature_scale,
+                separate_action_features=args.separate_action_features,
             )
             train_one(
                 env,
@@ -201,6 +237,7 @@ def main() -> None:
                 args.epsilon_end,
                 args.epsilon_decay,
                 run_seed,
+                args.train_sampling,
             )
             agent.solve()
             train_return, train_std, train_accuracy, train_accuracy_std = mean_return_and_accuracy(

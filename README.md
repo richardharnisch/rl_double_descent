@@ -183,6 +183,29 @@ does not retain a frozen observation/reward dataset. `--fit-field` permits a
 direct training optimal-action diagnostic while the curve remains based on
 held-out return.
 
+The confirmed online double-descent configuration uses sequential live
+contexts, separate-action ReLU features, and five learner seeds:
+
+```bash
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 uv run --no-sync \
+  python scripts/run_online_lstd_bandit.py --task bandit \
+  --widths 4,8,12,16,24,32,48,64,96,128,192,256,384,512 \
+  --runs 5 --base-seed 19500 --train-seeds 1001-1200 \
+  --test-seeds 1201-1400 --context-dim 3 --bandit-actions 2 \
+  --bandit-teacher-hidden 2 --bandit-teacher-seed 3 \
+  --reward-noise-std .5 --episodes 1000 --train-sampling sequential \
+  --eval-episodes 2 --epsilon-start 1 --epsilon-end 1 \
+  --epsilon-decay 1 --gamma 0 --ridge 0 --solve-every 1000 \
+  --feature-map relu --separate-action-features \
+  --log-dir testing/lstd_bandit_relu_separate_teacher3_split2_confirm_01
+uv run --no-sync python scripts/analyze_online_dd.py \
+  --metrics testing/lstd_bandit_relu_separate_teacher3_split2_confirm_01/metrics.csv \
+  --out-dir testing/lstd_bandit_relu_separate_teacher3_split2_confirm_01/analysis \
+  --min-return -1 --max-return 1 \
+  --fit-field train_optimal_action_rate --fit-threshold .95 \
+  --practical-effect .10
+```
+
 Sanity check (learnability)
 - `--sanity-check` (default: disabled): Run the obstacle-free learnability check before the main experiment.
 - `--sanity-only` (default: disabled): Run only the sanity check and exit without running the full sweep.
