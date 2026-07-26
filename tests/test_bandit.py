@@ -113,6 +113,11 @@ class ContextualBanditTests(unittest.TestCase):
         self.assertEqual(after.shape, (3,))
         self.assertFalse(np.array_equal(before, after))
 
+    def test_lstd_random_features_are_nested_across_widths(self) -> None:
+        narrow = OnlineLSTDQ(4, 3, 8, ridge=1e-2, seed=7)
+        wide = OnlineLSTDQ(4, 3, 16, ridge=1e-2, seed=7)
+        np.testing.assert_array_equal(narrow._projection, wide._projection[:, :8])
+
     def test_delayed_mdp_has_bootstrap_transition(self) -> None:
         env = DelayedContextMDPEnv(
             DelayedContextMDPConfig(context_dim=4, action_dim=3, reward_noise_std=0.0),

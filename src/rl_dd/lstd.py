@@ -34,9 +34,14 @@ class OnlineLSTDQ:
             raise ValueError("solve_interval must be positive.")
         rng = np.random.default_rng(self.seed)
         base_dim = self.input_dim + self.action_dim + 1
+        # Generate one feature vector per row before transposing. This makes
+        # widths nested for a fixed seed: a wider estimator contains exactly
+        # the same random features as every narrower estimator.
         self._projection = rng.normal(
-            0.0, 1.0 / np.sqrt(base_dim), size=(base_dim, self.feature_dim)
-        )
+            0.0,
+            1.0 / np.sqrt(base_dim),
+            size=(self.feature_dim, base_dim),
+        ).T
         self._a = np.eye(self.feature_dim, dtype=np.float64) * self.ridge
         self._b = np.zeros(self.feature_dim, dtype=np.float64)
         self._theta = np.zeros(self.feature_dim, dtype=np.float64)
